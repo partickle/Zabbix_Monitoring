@@ -1,0 +1,41 @@
+QVBoxLayout {
+    padding: 110px;
+}
+
+QLabel {
+    color: #333333;
+    font-size: 16px;
+    font-weight: bold;
+}
+
+QLabel#label_logo {
+    color: #333333;
+    font-size: 30px;
+    font-weight: bold;
+    text-align: center;
+    padding: 3px;
+}
+
+QLineEdit {
+    background-color: #F0F0F0;
+    border: 1px solid #CCCCCC;
+    padding: 5px;
+    border-radius: 3px;
+}
+
+QPushButton {
+    background-color: #0078D7;
+    color: #FFFFFF;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 3px;
+    font-weight: bold;
+}
+
+QPushButton:hover {
+    background-color: #005CA9;
+}
+
+QPushButton:pressed {
+    background-color: #002D5A;
+}
