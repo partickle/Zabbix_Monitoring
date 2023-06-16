@@ -4,50 +4,32 @@ from PyQt5.QtWidgets import QApplication, QMainWindow, QLabel, QVBoxLayout, QWid
 from pyzabbix import ZabbixAPI, ZabbixAPIException
 
 
-class WindowConnect(QDialog):
+class WindowLogin(QDialog):
     def __init__(self):
         super().__init__()
 
-        # Задаем css-стиль для Qt-tools
-        self.style_sheet = """
-                    QLabel {
-                        color: #333333;
-                        font-size: 16px;
-                        font-weight: bold;
-                    }
+        # Загружаем строку с css-стилем для Qt-tools
+        # (setStyleSheet как аргумент использует строку)
+        with open('styles/window_login.css', 'r') as css_file:
+            self.style_sheet = css_file.read()
 
-                    QLineEdit {
-                        background-color: #F0F0F0;
-                        border: 1px solid #CCCCCC;
-                        padding: 5px;
-                        border-radius: 3px;
-                    }
-
-                    QPushButton {
-                        background-color: #0078D7;
-                        color: #FFFFFF;
-                        border: none;
-                        padding: 8px 16px;
-                        border-radius: 3px;
-                        font-weight: bold;
-                    }
-
-                    QPushButton:hover {
-                        background-color: #005CA9;
-                    }
-
-                    QPushButton:pressed {
-                        background-color: #002D5A;
-                    }
-                """
-
-        self.setWindowTitle("Zabbix Monitoring")
-        self.setFixedSize(350, 250)
+        self.setWindowTitle("Авторизация")
+        self.setFixedSize(400, 500)
 
         self.setStyleSheet(self.style_sheet)
 
         # Создаем виджеты с полями url(адрес API Zabbix)/user/password
         layout = QVBoxLayout(self)
+        layout.setContentsMargins(50, 0, 50, 100)
+
+        layout_logo = QVBoxLayout(self)
+        layout_logo.setContentsMargins(0, 50, 0, 70)
+
+        label_logo = QLabel("Zabbix Monitoring")
+        label_logo.setObjectName("label_logo")
+        layout_logo.addWidget(label_logo)
+
+        layout.addLayout(layout_logo)
 
         label_url = QLabel("URL:")
         layout.addWidget(label_url)
@@ -100,10 +82,10 @@ class WindowConnect(QDialog):
 
 
 # Класс приложения с реализацией функций API (меню)
-class WindowZabbixApp(QMainWindow):
+class WindowMenu(QMainWindow):
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("Zabbix App")
+        self.setWindowTitle("Zabbix Monitoring")
         self.setGeometry(100, 100, 400, 300)
 
         self.hosts_label = QLabel()
@@ -128,6 +110,6 @@ class WindowZabbixApp(QMainWindow):
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
-    window = WindowConnect()
+    window = WindowLogin()
     window.show()
     sys.exit(app.exec_())
