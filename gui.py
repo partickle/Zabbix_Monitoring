@@ -70,6 +70,8 @@ class WindowLogin(QDialog):
             zabbix = ZabbixAPI(url)
             zabbix.login(user, password)
             QMessageBox.information(self, "Успех", "Вы успешно вошли!")
+            self.windowMenu = WindowMenu(zabbix)
+            self.windowMenu.show()
 
         except ZabbixAPIException as e:
             QMessageBox.information(self, "Ошибка Zabbix API", f'{e}')
@@ -83,7 +85,7 @@ class WindowLogin(QDialog):
 
 # Класс приложения с реализацией функций API (меню)
 class WindowMenu(QMainWindow):
-    def __init__(self):
+    def __init__(self, zabbix):
         super().__init__()
         self.setWindowTitle("Zabbix Monitoring")
         self.setGeometry(100, 100, 400, 300)
@@ -100,12 +102,18 @@ class WindowMenu(QMainWindow):
         central_widget = QWidget()
         central_widget.setLayout(layout)
         self.setCentralWidget(central_widget)
+        self.connect_to_zabbix(zabbix)
 
-        # def connect_to_zabbix(self):
-        #     hosts = zabbix.host.get(output=['hostid', 'name'])
-        #     host_names = [host['name'] for host in hosts]
-        #
-        #     self.hosts_list.setText("\n".join(host_names))
+    def connect_to_zabbix(self, zabbix):
+        #hosts = zabbix.host.get(search={'host':['Zabbix server']}, excludeSearch=1, output=['hostid', 'name']) excludeSearch не работает на данной версии
+        hosts = zabbix.host.get(output=['hostid', 'name', 'host'])
+        print(hosts)
+        hostsToPrint = []
+        for host in hosts:
+            if host['name'] != 'Zabbix server':
+                hostsToPrint.append(host)
+        host_names = [host['host'] for host in hostsToPrint]
+        self.hosts_list.setText("\n".join(host_names))
 
 
 if __name__ == '__main__':
