@@ -2,6 +2,8 @@ import sys
 from PyQt5.QtWidgets import QApplication, QMainWindow, QLabel, QVBoxLayout, QWidget, QLineEdit, \
     QPushButton, QDialog, QMessageBox
 from pyzabbix import ZabbixAPI, ZabbixAPIException
+import requests
+import json
 
 
 class WindowLogin(QDialog):
@@ -105,12 +107,28 @@ class WindowMenu(QMainWindow):
         self.connect_to_zabbix(zabbix)
 
     def connect_to_zabbix(self, zabbix):
+        '''
+        ZABBIX_API_URL = 'http://25.63.71.93/api_jsonrpc.php'
+        r = requests.post(ZABBIX_API_URL,
+                  json={
+                      "jsonrpc": "2.0",
+                      "method": "user.login",
+                      "params": {
+                          "user": 'Admin',
+                          "password": 'zabbix'},
+                      "id": 1
+                  })
+        AUTHTOKEN = r.json()["result"]
+        '''
+        r = requests.get('http://25.63.71.93/zabbix_server.log')
+        print(r.text)
         #hosts = zabbix.host.get(search={'host':['Zabbix server']}, excludeSearch=1, output=['hostid', 'name']) excludeSearch не работает на данной версии
+        #hosts = zabbix.host.get(hosts = zabbix.host.get({"groupids": "22", "output": ["hostid","name","host"]})) Странно, но это тоже не работает, хотя тут https://stackoverflow.com/questions/28892423/zabbix-api-get-all-host-names работает
         hosts = zabbix.host.get(output=['hostid', 'name', 'host'])
         print(hosts)
         hostsToPrint = []
         for host in hosts:
-            if host['name'] != 'Zabbix server':
+            if host['host'] != 'Zabbix server':
                 hostsToPrint.append(host)
         host_names = [host['host'] for host in hostsToPrint]
         self.hosts_list.setText("\n".join(host_names))
