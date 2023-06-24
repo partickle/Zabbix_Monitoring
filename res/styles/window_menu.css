@@ -1,0 +1,41 @@
+QDialog {
+    background-color: #5a000000;
+}
+
+QPushButton {
+    background-color: #70000000;
+    color: #ffffff;
+    border: none;
+    padding: 20px 20px;
+    font-weight: bold;
+    font-size: 20px;
+    border-radius: 0px;
+    border-bottom-left-radius: 15px;
+}
+
+QPushButton:hover {
+    background-color: #aa000000;
+    color: #ffffff;
+    border-bottom-left-radius: 15px;
+    font-size: 21px;
+}
+
+QPushButton:disabled {
+    color: #8642ee;
+    background-color: #a9ffffff;
+    border-top-left-radius: 0px;
+    border-bottom-left-radius: 15px;
+}
+
+QPushButton#quick_buttons {
+    background-color: #80000000;
+    color: #ffffff;
+    border: none;
+    padding: 15px 20px;
+    border-radius: 0px;
+}
+
+QPushButton:hover#quick_buttons {
+    background-color: #b2000000;
+    color: #ffffff;
+}
