@@ -1,7 +1,7 @@
 import sys
 
 from PyQt5.QtCore import Qt, QSize
-from PyQt5.QtGui import QIcon
+from PyQt5.QtGui import QIcon, QPixmap
 from PyQt5.QtWidgets import QApplication, QLabel, QVBoxLayout, QLineEdit, \
     QPushButton, QDialog, QMessageBox, QHBoxLayout
 from pyzabbix import ZabbixAPI, ZabbixAPIException
@@ -15,7 +15,7 @@ class WindowLogin(QDialog):
         self.window_menu = None
 
         self.setWindowTitle("Авторизация")
-        self.setFixedSize(400, 500)
+        self.setFixedSize(400, 550)
 
         # Применение css-стилей через чтение файла
         # (setStyleSheet как аргумент использует строку)
@@ -23,15 +23,26 @@ class WindowLogin(QDialog):
 
         # Создаем поля с лого и с вводом
         layout_input = QVBoxLayout(self)
-        layout_input.setContentsMargins(50, 0, 50, 100)
+        layout_input.setContentsMargins(30, 0, 30, 0)
+        layout_input.setAlignment(Qt.AlignTop)
 
         layout_logo = QVBoxLayout(self)
-        layout_logo.setContentsMargins(0, 50, 0, 70)
+        layout_logo.setContentsMargins(0, 40, 0, 30)
+        layout_logo.setSpacing(20)
+
+        # Добавляем лого в формате png
+        label_logo = QLabel()
+        label_logo.setPixmap(QPixmap("res/img/logo.png"))
+        label_logo.setAlignment(Qt.AlignCenter)
 
         # Создаем виджеты с полями url(адрес API Zabbix)/user/password
-        label_logo = QLabel("Zabbix Monitoring")
-        label_logo.setObjectName("label_logo")
+        label_logo_title = QLabel("Zabbix Monitoring")
+        label_logo_title.setObjectName("label_logo")
+        label_logo_title.setAlignment(Qt.AlignCenter)
+
+        # Добавляем лого и надпись на лайаут
         layout_logo.addWidget(label_logo)
+        layout_logo.addWidget(label_logo_title)
 
         layout_input.addLayout(layout_logo)
 
@@ -54,7 +65,7 @@ class WindowLogin(QDialog):
         self.input_password.setEchoMode(QLineEdit.Password)
         layout_input.addWidget(self.input_password)
 
-        button_login = QPushButton("Войти")
+        button_login = QPushButton("Вход")
         button_login.clicked.connect(self.login)
         layout_input.addWidget(button_login)
 
