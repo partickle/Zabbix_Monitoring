@@ -1,5 +1,5 @@
-QDialog.WindowApp {
-    background-image: url("img/background.png");
+QDialog {
+    background-color: #80ffffff;
 }
 
 QPushButton {

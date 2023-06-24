@@ -1,6 +1,7 @@
 import sys
 
-from PyQt5.QtCore import Qt
+from PyQt5.QtCore import Qt, QSize
+from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import QApplication, QLabel, QVBoxLayout, QLineEdit, \
     QPushButton, QDialog, QMessageBox, QHBoxLayout
 from pyzabbix import ZabbixAPI, ZabbixAPIException
@@ -18,7 +19,7 @@ class WindowLogin(QDialog):
 
         # Применение css-стилей через чтение файла
         # (setStyleSheet как аргумент использует строку)
-        self.setStyleSheet(open('styles/window_login.css').read())
+        self.setStyleSheet(open('res/styles/window_login.css').read())
 
         # Создаем поля с лого и с вводом
         layout_input = QVBoxLayout(self)
@@ -37,7 +38,7 @@ class WindowLogin(QDialog):
         label_url = QLabel("URL:")
         layout_input.addWidget(label_url)
 
-        self.input_url = QLineEdit("http://25.71.15.72/")
+        self.input_url = QLineEdit("http://25.63.71.93/")
         layout_input.addWidget(self.input_url)
 
         label_user = QLabel("Пользователь:")
@@ -97,23 +98,56 @@ class WindowApp(QDialog):
         # Создаем экземпляр Zabbix API
         self.zabbix = zabbix
 
-        # Текущее открытое окно во втором лайауте
-        self.cur_action_window = None
-
         self.setWindowTitle("Zabbix Monitoring")
         self.setFixedSize(1200, 700)
 
-        self.setStyleSheet(open('styles/window_app.css').read())
+        self.setStyleSheet(open('res/styles/window_app.css').read())
 
         # Создаем основной лайаут
         main_layout = QHBoxLayout(self)
 
-        # Создаем левый, средний и правый лайаут с меню, рабочим окном и логами соответственно
-        left_layout = QVBoxLayout()
-        left_layout.setAlignment(Qt.AlignTop)
-
-        self.middle_layout = QVBoxLayout()  # Делаем self, чтобы его можно передать в другие методы
+        # Создаем левый виджет, средний и правый лайауты с меню, рабочим окном и логами соответственно
+        middle_layout = QVBoxLayout()
+        left_widget = WindowMenu(middle_layout)
         right_layout = QVBoxLayout()
+
+        # Добавление левого, среднего и правого окон в основной лайаут
+        main_layout.addWidget(left_widget)
+        main_layout.addLayout(middle_layout)
+        main_layout.addLayout(right_layout)
+
+        # Корректировка "зазоров" между лайаутами
+        main_layout.setContentsMargins(0, 0, 0, 0)  # Отступы между краями главного лайаута
+        main_layout.setSpacing(0)  # Установка того, что пространство между лайаутом и окном будет 0
+        main_layout.setStretch(0, 2)  # Какой лайаут сколько частей занимает
+        main_layout.setStretch(1, 4)
+        main_layout.setStretch(2, 2)
+
+
+# Класс меню (слева основного окна приложения)
+class WindowMenu(QDialog):
+    def __init__(self, action_layout):
+        super().__init__()
+
+        # Текущее открытое окно во активном лайауте
+        self.cur_action_window = None
+
+        # Создаем копию активного окна и делаем его self, чтобы использовать в других методах
+        self.action_layout = action_layout
+
+        self.setFixedSize(300, 700)
+        self.setStyleSheet(open('res/styles/window_menu.css').read())
+
+        # Создаем главный лайаут и настраиваем отступы
+        main_layout = QVBoxLayout(self)
+        main_layout.setContentsMargins(0, 0, 0, 0)
+        main_layout.setSpacing(0)
+
+        # Создаем лайаут с меню и настраиваем отступы
+        menu_layout = QVBoxLayout()
+        menu_layout.setAlignment(Qt.AlignTop)
+        menu_layout.setContentsMargins(10, 0, 0, 0)
+        menu_layout.setSpacing(0)
 
         # Создаем массив с кнопками
         self.buttons_menu = []
@@ -130,36 +164,50 @@ class WindowApp(QDialog):
         button_users.clicked.connect(lambda: self.button_clicked(button_users))
         button_users.clicked.connect(lambda: self.open_window_action("window_users.css"))
 
-        left_layout.addWidget(button_node_web)
-        left_layout.addWidget(button_users)
+        menu_layout.addWidget(button_node_web)
+        menu_layout.addWidget(button_users)
 
-        # Добавление левого, среднего и правого окон в основной лайаут
-        main_layout.addLayout(left_layout)
-        main_layout.addLayout(self.middle_layout)
-        main_layout.addLayout(right_layout)
+        # Создаем лайаут с быстрым меню
+        quick_layout = QHBoxLayout()
 
-        # Корректировка "зазоров" между лайаутами
-        main_layout.setContentsMargins(0, 0, 0, 0)  # Отступы между краями главного лайаута
-        main_layout.setSpacing(0)  # Установка того, что пространство между лайаутом и окном будет 0
-        main_layout.setStretch(0, 2)  # Какой лайаут сколько частей занимает
-        main_layout.setStretch(1, 4)
-        main_layout.setStretch(2, 2)
+        # Создаем кнопки
+        button_user = QPushButton()
+        button_user.setObjectName("quick_buttons")  # Присваиваем отдельный класс для стилизации
+        button_user.setIcon(QIcon("res/icon/user.svg"))  # Добавляем в кнопку иконку в svg-формате для качества
+        button_user.setIconSize(QSize(48, 48))  # Задаем размер
+        quick_layout.addWidget(button_user)
 
-    # Метод, который открывает новое окно во втором лайауте.
+        button_settings = QPushButton()
+        button_settings.setObjectName("quick_buttons")
+        button_settings.setIcon(QIcon("res/icon/settings.svg"))
+        button_settings.setIconSize(QSize(48, 48))
+        quick_layout.addWidget(button_settings)
+
+        button_logout = QPushButton()
+        button_logout.setObjectName("quick_buttons")
+        button_logout.setIcon(QIcon('res/icon/logout.svg'))
+        button_logout.setIconSize(QSize(48, 48))
+        quick_layout.addWidget(button_logout)
+
+        # Добавляем на лайаут
+        main_layout.addLayout(menu_layout)
+        main_layout.addLayout(quick_layout)
+
+    # Метод, который открывает новое окно в активном лайауте.
     # Не теряет состояние текущего окна, если нажать еще раз на кнопку
     def open_window_action(self, name_window):
         if name_window == "window_node_web" and not isinstance(self.cur_action_window, WindowNodeWeb):
             self.close_window_action()
             window_node_web = WindowNodeWeb()
-            self.middle_layout.addWidget(window_node_web)
+            self.action_layout.addWidget(window_node_web)
             self.cur_action_window = window_node_web
         elif name_window == "window_users.css" and not isinstance(self.cur_action_window, WindowUsers):
             self.close_window_action()
             window_users = WindowUsers()
-            self.middle_layout.addWidget(window_users)
+            self.action_layout.addWidget(window_users)
             self.cur_action_window = window_users
 
-    # Метод, который закрывает текущее окно во втором лайауте
+    # Метод, который закрывает текущее окно в активном лайауте
     def close_window_action(self):
         if self.cur_action_window is not None:
             self.cur_action_window.deleteLater()
@@ -172,22 +220,15 @@ class WindowApp(QDialog):
                 btn.setEnabled(True)
         button.setEnabled(False)  # Состояние текущей нажатой кнопки устанавливается во включенное и нажатое
 
-    # def connect_to_zabbix(self, zabbix):
-    #     hosts = zabbix.host.get(output=['hostid', 'name'], filter=['Zabbix server'])
-    #     host_names = [host['name'] for host in hosts]
-    #     host_id = [host['hostid'] for host in hosts]
-    #
-    #     self.hosts_list.setText("".join(host_names) + "          \n".join(host_id))
 
-
+# Класс активного окна узлов сети
 class WindowNodeWeb(QDialog):
     def __init__(self):
         super().__init__()
 
-        self.setWindowTitle("Zabbix App")
         self.setFixedSize(600, 700)
+        self.setStyleSheet(open('res/styles/window_node_web.css').read())
 
-        self.setStyleSheet(open('styles/window_node_web.css').read())
         main_layout = QHBoxLayout(self)
 
         main_layout.setContentsMargins(0, 0, 0, 0)
@@ -218,20 +259,19 @@ class WindowNodeWeb(QDialog):
         button.setEnabled(False)
 
 
+# Класс активного окна с пользователями
 class WindowUsers(QDialog):
     def __init__(self):
         super().__init__()
 
-        self.setWindowTitle("Zabbix App")
         self.setFixedSize(600, 700)
-
-        self.setStyleSheet(open('styles/window_users.css').read())
+        self.setStyleSheet(open('res/styles/window_users.css').read())
 
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
 
-    window_app = WindowApp(1234)
-    window_app.show()
+    window_login = WindowLogin()
+    window_login.show()
 
     sys.exit(app.exec_())

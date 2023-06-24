@@ -24,18 +24,19 @@ QLineEdit {
 }
 
 QPushButton {
-    background-color: #0078D7;
+    background-color: #9010ee;
     color: #FFFFFF;
     border: none;
     padding: 8px 16px;
     border-radius: 3px;
     font-weight: bold;
+    font-size: 16px;
 }
 
 QPushButton:hover {
-    background-color: #005CA9;
+    background-color: #7010ee;
 }
 
 QPushButton:pressed {
-    background-color: #002D5A;
+    background-color: #5000aa;
 }
