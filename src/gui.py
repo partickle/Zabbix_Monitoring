@@ -123,12 +123,12 @@ class WindowApp(QDialog):
         # Создаем левый виджет, средний и правый лайауты с меню, рабочим окном и логами соответственно
         middle_layout = QVBoxLayout()
         left_widget = WindowMenu(middle_layout)
-        self.right_layout = WindowTerminal(self.zabbix)
+        self.right_widget = WindowTerminal(self.zabbix)
 
         # Добавление левого, среднего и правого окон в основной лайаут
         main_layout.addWidget(left_widget)
         main_layout.addLayout(middle_layout)
-        main_layout.addWidget(self.right_layout)
+        main_layout.addWidget(self.right_widget)
 
         # Корректировка "зазоров" между лайаутами
         main_layout.setContentsMargins(0, 0, 0, 0)  # Отступы между краями главного лайаута
@@ -139,7 +139,7 @@ class WindowApp(QDialog):
 
     # Метод, который при нажатии на крестик окна, выключает таймер и закрывает его
     def closeEvent(self, event):
-        self.right_layout.timer.cancel()
+        self.right_widget.timer_flag = False
         event.accept()
 
 
@@ -249,6 +249,9 @@ class WindowTerminal(QDialog):
         # Создаем экземпляр класса с логикой терминала
         self.terminal = Terminal(zabbix)
 
+        # Флаг для отключения таймера в closeEvent
+        self.timer_flag = True
+
         self.setFixedSize(300, 700)
         self.setStyleSheet(open('res/styles/window_terminal.css').read())
 
@@ -274,12 +277,15 @@ class WindowTerminal(QDialog):
 
     # Метод обновления лейбла логов
     def update_terminal(self):
-        # Здесь тоже создаем таймер, чтобы его зарекурсировать
-        self.timer = threading.Timer(1.0, self.update_terminal)
-        self.timer.start()
         # Если пришло обновление логов, то отображаем его
         if self.terminal.log_request():
-            self.label.setText(self.label.text() + "\n" + self.terminal.last_checked_str)
+            self.label.setText(self.label.text() + "\n".join(self.terminal.last_checked_str_arr))
+
+        # Если флаг таймера True, то...
+        if self.timer_flag:
+            # Здесь тоже создаем таймер, чтобы его зарекурсировать
+            self.timer = threading.Timer(1.0, self.update_terminal)
+            self.timer.start()
 
 
 # Класс активного окна узлов сети
