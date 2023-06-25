@@ -33,6 +33,7 @@ class Terminal:
         # Если в массиве есть обновления, то...
         if len(new_checked_str) != 0:
             self.last_checked_str_arr = list(reversed(new_checked_str))  # Сохраняем их
+            self.last_checked_str = new_checked_str[0]
             return True  # И отправляем сигнал того, что пришло обновление
 
         return False
