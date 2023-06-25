@@ -1,0 +1,14 @@
+QDialog {
+    background-color: #5a000000
+}
+
+QLabel {
+    background-color: #00000000;
+    font-weight: bold;
+    font-size: 15px;
+    padding: 20px;
+}
+
+QScrollArea {
+    background-color: #00000000
+}
