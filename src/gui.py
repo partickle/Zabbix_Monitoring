@@ -279,7 +279,7 @@ class WindowTerminal(QDialog):
     def update_terminal(self):
         # Если пришло обновление логов, то отображаем его
         if self.terminal.log_request():
-            self.label.setText(self.label.text() + "\n".join(self.terminal.last_checked_str_arr))
+            self.label.setText(self.label.text() + "\n".join(self.terminal.last_checked_str_arr) + "\n")
 
         # Если флаг таймера True, то...
         if self.timer_flag:
