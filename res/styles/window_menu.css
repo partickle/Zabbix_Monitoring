@@ -1,3 +1,8 @@
+@keyframes slide {
+  0% { border-bottom-left-radius: 0px; background-color: #aa000000; color: #ffffff; }
+  100% { border-bottom-left-radius: 15px;background-color: #a9ffffff; color: #8642ee; }
+}
+
 QDialog {
     background-color: #5a000000;
 }
@@ -10,21 +15,19 @@ QPushButton {
     font-weight: bold;
     font-size: 20px;
     border-radius: 0px;
-    border-bottom-left-radius: 15px;
 }
 
 QPushButton:hover {
     background-color: #aa000000;
     color: #ffffff;
-    border-bottom-left-radius: 15px;
     font-size: 21px;
 }
 
 QPushButton:disabled {
     color: #8642ee;
     background-color: #a9ffffff;
-    border-top-left-radius: 0px;
     border-bottom-left-radius: 15px;
+    margin-left: 10px;
 }
 
 QPushButton#quick_buttons {

@@ -165,7 +165,7 @@ class WindowMenu(QDialog):
         # Создаем лайаут с меню и настраиваем отступы
         menu_layout = QVBoxLayout()
         menu_layout.setAlignment(Qt.AlignTop)
-        menu_layout.setContentsMargins(10, 0, 0, 0)
+        menu_layout.setContentsMargins(0, 0, 0, 0)
         menu_layout.setSpacing(0)
 
         # Создаем массив с кнопками
@@ -238,7 +238,9 @@ class WindowMenu(QDialog):
         for btn in self.buttons_menu:  # Проверяем каждую кнопку
             if btn != button:  # Если она не равна текущей нажатой кнопке,
                 btn.setEnabled(True)
+                btn.setContentsMargins(0, 0, 0, 0)
         button.setEnabled(False)  # Состояние текущей нажатой кнопки устанавливается во включенное и нажатое
+        btn.setContentsMargins(0, 0, 0, 0)
 
 
 # Класс окна терминала, в котором будут транслироваться в реальном времени логи zabbix
