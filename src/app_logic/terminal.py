@@ -40,7 +40,7 @@ class Terminal:
     # Метод для заполнения существующих логов
     def log_full_request(self, label):
         # Сообщение о формате отображения логов
-        label.setText("FORMAT_LOGS: \"EventId.yyyy-mm-dd. HH:HM:SS Message\"\n===================\n ")
+        label.setText("FORMAT_LOGS: \"EventId.yyyy-mm-dd. HH:HM:SS Message\"\n===================\n\n")
 
         logs = self.zabbix.event.get(output='extend', sortfield='clock', sortorder='DESC')
         if len(logs) == 0:
@@ -49,7 +49,7 @@ class Terminal:
         # Прогоняем все существующие логи на данный момент
         for log in reversed(logs):  # Логи обычно записываются в обратном порядке, поэтому reversed
             new_str = log['eventid'] + "." + get_norm_data(int(log['clock'])) + " " + log['name']
-            label.setText(label.text() + "\n" + new_str)  # Добавляем в лейбл лог
+            label.setText(label.text() + new_str + "\n")  # Добавляем в лейбл лог
             self.last_checked_str = new_str  # И обновляем последнюю добавленную строку
 
 
