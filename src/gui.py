@@ -1,10 +1,13 @@
 import sys
+import threading
 
 from PyQt5.QtCore import Qt, QSize
-from PyQt5.QtGui import QIcon
+from PyQt5.QtGui import QIcon, QPixmap
 from PyQt5.QtWidgets import QApplication, QLabel, QVBoxLayout, QLineEdit, \
-    QPushButton, QDialog, QMessageBox, QHBoxLayout
+    QPushButton, QDialog, QMessageBox, QHBoxLayout, QScrollArea
+
 from pyzabbix import ZabbixAPI, ZabbixAPIException
+from app_logic import Terminal
 
 
 # Класс окна с авторизацией
@@ -15,7 +18,7 @@ class WindowLogin(QDialog):
         self.window_menu = None
 
         self.setWindowTitle("Авторизация")
-        self.setFixedSize(400, 500)
+        self.setFixedSize(400, 550)
 
         # Применение css-стилей через чтение файла
         # (setStyleSheet как аргумент использует строку)
@@ -23,22 +26,33 @@ class WindowLogin(QDialog):
 
         # Создаем поля с лого и с вводом
         layout_input = QVBoxLayout(self)
-        layout_input.setContentsMargins(50, 0, 50, 100)
+        layout_input.setContentsMargins(30, 0, 30, 0)
+        layout_input.setAlignment(Qt.AlignTop)
 
         layout_logo = QVBoxLayout(self)
-        layout_logo.setContentsMargins(0, 50, 0, 70)
+        layout_logo.setContentsMargins(0, 40, 0, 30)
+        layout_logo.setSpacing(20)
+
+        # Добавляем лого в формате png
+        label_logo = QLabel()
+        label_logo.setPixmap(QPixmap("res/img/logo.png"))
+        label_logo.setAlignment(Qt.AlignCenter)
 
         # Создаем виджеты с полями url(адрес API Zabbix)/user/password
-        label_logo = QLabel("Zabbix Monitoring")
-        label_logo.setObjectName("label_logo")
+        label_logo_title = QLabel("Zabbix Monitoring")
+        label_logo_title.setObjectName("label_logo")
+        label_logo_title.setAlignment(Qt.AlignCenter)
+
+        # Добавляем лого и надпись на лайаут
         layout_logo.addWidget(label_logo)
+        layout_logo.addWidget(label_logo_title)
 
         layout_input.addLayout(layout_logo)
 
         label_url = QLabel("URL:")
         layout_input.addWidget(label_url)
 
-        self.input_url = QLineEdit("http://25.63.71.93/")
+        self.input_url = QLineEdit("http://25.71.15.72/")
         layout_input.addWidget(self.input_url)
 
         label_user = QLabel("Пользователь:")
@@ -54,7 +68,7 @@ class WindowLogin(QDialog):
         self.input_password.setEchoMode(QLineEdit.Password)
         layout_input.addWidget(self.input_password)
 
-        button_login = QPushButton("Войти")
+        button_login = QPushButton("Вход")
         button_login.clicked.connect(self.login)
         layout_input.addWidget(button_login)
 
@@ -109,12 +123,12 @@ class WindowApp(QDialog):
         # Создаем левый виджет, средний и правый лайауты с меню, рабочим окном и логами соответственно
         middle_layout = QVBoxLayout()
         left_widget = WindowMenu(middle_layout)
-        right_layout = QVBoxLayout()
+        self.right_widget = WindowTerminal(self.zabbix)
 
         # Добавление левого, среднего и правого окон в основной лайаут
         main_layout.addWidget(left_widget)
         main_layout.addLayout(middle_layout)
-        main_layout.addLayout(right_layout)
+        main_layout.addWidget(self.right_widget)
 
         # Корректировка "зазоров" между лайаутами
         main_layout.setContentsMargins(0, 0, 0, 0)  # Отступы между краями главного лайаута
@@ -122,6 +136,11 @@ class WindowApp(QDialog):
         main_layout.setStretch(0, 2)  # Какой лайаут сколько частей занимает
         main_layout.setStretch(1, 4)
         main_layout.setStretch(2, 2)
+
+    # Метод, который при нажатии на крестик окна, выключает таймер и закрывает его
+    def closeEvent(self, event):
+        self.right_widget.timer_flag = False
+        event.accept()
 
 
 # Класс меню (слева основного окна приложения)
@@ -187,6 +206,7 @@ class WindowMenu(QDialog):
         button_logout.setObjectName("quick_buttons")
         button_logout.setIcon(QIcon('res/icon/logout.svg'))
         button_logout.setIconSize(QSize(48, 48))
+        button_logout.clicked.connect(QApplication.closeAllWindows)  # Закрываем все окна, таймер тоже перестанет идти
         quick_layout.addWidget(button_logout)
 
         # Добавляем на лайаут
@@ -219,6 +239,53 @@ class WindowMenu(QDialog):
             if btn != button:  # Если она не равна текущей нажатой кнопке,
                 btn.setEnabled(True)
         button.setEnabled(False)  # Состояние текущей нажатой кнопки устанавливается во включенное и нажатое
+
+
+# Класс окна терминала, в котором будут транслироваться в реальном времени логи zabbix
+class WindowTerminal(QDialog):
+    def __init__(self, zabbix):
+        super().__init__()
+
+        # Создаем экземпляр класса с логикой терминала
+        self.terminal = Terminal(zabbix)
+
+        # Флаг для отключения таймера в closeEvent
+        self.timer_flag = True
+
+        self.setFixedSize(300, 700)
+        self.setStyleSheet(open('res/styles/window_terminal.css').read())
+
+        # Создаем лейбл, в котором будут отображаться логи
+        self.label = QLabel()
+        self.label.setFixedWidth(275)
+        self.label.setAlignment(Qt.AlignTop)
+        self.label.setWordWrap(True)
+
+        # Создаем скролл, чтобы можно было смотреть предыдущие записи
+        scroll_area = QScrollArea(self)
+        scroll_area.setFixedSize(300, 700)
+        scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)  # Отключаем горизонтальный скролл
+        scroll_area.setWidgetResizable(True)  # Включаем динамическое масштабирование,
+        scroll_area.setWidget(self.label)     # т.к. у нас будет увеличиваться окно
+
+        # Загружаем сначала полный список логов
+        self.terminal.log_full_request(self.label)
+
+        # Ставим таймер секунду
+        self.timer = threading.Timer(1.0, self.update_terminal)
+        self.timer.start()
+
+    # Метод обновления лейбла логов
+    def update_terminal(self):
+        # Если пришло обновление логов, то отображаем его
+        if self.terminal.log_request():
+            self.label.setText(self.label.text() + "\n".join(self.terminal.last_checked_str_arr))
+
+        # Если флаг таймера True, то...
+        if self.timer_flag:
+            # Здесь тоже создаем таймер, чтобы его зарекурсировать
+            self.timer = threading.Timer(1.0, self.update_terminal)
+            self.timer.start()
 
 
 # Класс активного окна узлов сети

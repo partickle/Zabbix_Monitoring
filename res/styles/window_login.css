@@ -13,7 +13,7 @@ QLabel#label_logo {
     font-size: 30px;
     font-weight: bold;
     text-align: center;
-    padding: 3px;
+    padding: 10px;
 }
 
 QLineEdit {
@@ -27,16 +27,16 @@ QPushButton {
     background-color: #9010ee;
     color: #FFFFFF;
     border: none;
-    padding: 8px 16px;
-    border-radius: 3px;
+    padding: 10px 16px;
+    border-radius: 5px;
     font-weight: bold;
-    font-size: 16px;
+    font-size: 17px;
 }
 
 QPushButton:hover {
-    background-color: #7010ee;
+    background-color: #7010dd;
 }
 
 QPushButton:pressed {
-    background-color: #5000aa;
+    background-color: #501099;
 }
