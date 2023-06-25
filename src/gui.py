@@ -52,7 +52,7 @@ class WindowLogin(QDialog):
         label_url = QLabel("URL:")
         layout_input.addWidget(label_url)
 
-        self.input_url = QLineEdit("http://25.71.15.72/")
+        self.input_url = QLineEdit("http://25.63.71.93/")
         layout_input.addWidget(self.input_url)
 
         label_user = QLabel("Пользователь:")
@@ -279,7 +279,11 @@ class WindowTerminal(QDialog):
     def update_terminal(self):
         # Если пришло обновление логов, то отображаем его
         if self.terminal.log_request():
-            self.label.setText(self.label.text() + "\n".join(self.terminal.last_checked_str_arr))
+            self.label.setText(self.label.text() + "\n".join(self.terminal.last_checked_str_arr) + "\n")
+            a = "\n".join(self.terminal.last_checked_str_arr)
+            b = self.terminal.last_checked_str
+            c = self.terminal.last_checked_str_arr
+            
 
         # Если флаг таймера True, то...
         if self.timer_flag:

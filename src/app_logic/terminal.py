@@ -33,6 +33,7 @@ class Terminal:
         # Если в массиве есть обновления, то...
         if len(new_checked_str) != 0:
             self.last_checked_str_arr = list(reversed(new_checked_str))  # Сохраняем их
+            self.last_checked_str = new_checked_str[0]
             return True  # И отправляем сигнал того, что пришло обновление
 
         return False
@@ -50,7 +51,7 @@ class Terminal:
         for log in reversed(logs):  # Логи обычно записываются в обратном порядке, поэтому reversed
             new_str = log['eventid'] + "." + get_norm_data(int(log['clock'])) + " " + log['name']
             label.setText(label.text() + new_str + "\n")  # Добавляем в лейбл лог
-            self.last_checked_str = new_str  # И обновляем последнюю добавленную строку
+            self.last_checked_str = new_str # И обновляем последнюю добавленную строку
 
 
 # Функция для преобразования даты из UNIX timestamp в привычную
