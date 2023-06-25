@@ -1,10 +1,13 @@
 import sys
+import threading
 
 from PyQt5.QtCore import Qt, QSize
 from PyQt5.QtGui import QIcon, QPixmap
 from PyQt5.QtWidgets import QApplication, QLabel, QVBoxLayout, QLineEdit, \
-    QPushButton, QDialog, QMessageBox, QHBoxLayout
+    QPushButton, QDialog, QMessageBox, QHBoxLayout, QScrollArea
+
 from pyzabbix import ZabbixAPI, ZabbixAPIException
+from app_logic import Terminal
 
 
 # Класс окна с авторизацией
@@ -49,7 +52,7 @@ class WindowLogin(QDialog):
         label_url = QLabel("URL:")
         layout_input.addWidget(label_url)
 
-        self.input_url = QLineEdit("http://25.63.71.93/")
+        self.input_url = QLineEdit("http://25.71.15.72/")
         layout_input.addWidget(self.input_url)
 
         label_user = QLabel("Пользователь:")
@@ -120,12 +123,12 @@ class WindowApp(QDialog):
         # Создаем левый виджет, средний и правый лайауты с меню, рабочим окном и логами соответственно
         middle_layout = QVBoxLayout()
         left_widget = WindowMenu(middle_layout)
-        right_layout = QVBoxLayout()
+        self.right_layout = WindowTerminal(self.zabbix)
 
         # Добавление левого, среднего и правого окон в основной лайаут
         main_layout.addWidget(left_widget)
         main_layout.addLayout(middle_layout)
-        main_layout.addLayout(right_layout)
+        main_layout.addWidget(self.right_layout)
 
         # Корректировка "зазоров" между лайаутами
         main_layout.setContentsMargins(0, 0, 0, 0)  # Отступы между краями главного лайаута
@@ -133,6 +136,11 @@ class WindowApp(QDialog):
         main_layout.setStretch(0, 2)  # Какой лайаут сколько частей занимает
         main_layout.setStretch(1, 4)
         main_layout.setStretch(2, 2)
+
+    # Метод, который при нажатии на крестик окна, выключает таймер и закрывает его
+    def closeEvent(self, event):
+        self.right_layout.timer.cancel()
+        event.accept()
 
 
 # Класс меню (слева основного окна приложения)
@@ -198,6 +206,7 @@ class WindowMenu(QDialog):
         button_logout.setObjectName("quick_buttons")
         button_logout.setIcon(QIcon('res/icon/logout.svg'))
         button_logout.setIconSize(QSize(48, 48))
+        button_logout.clicked.connect(QApplication.closeAllWindows)  # Закрываем все окна, таймер тоже перестанет идти
         quick_layout.addWidget(button_logout)
 
         # Добавляем на лайаут
@@ -230,6 +239,47 @@ class WindowMenu(QDialog):
             if btn != button:  # Если она не равна текущей нажатой кнопке,
                 btn.setEnabled(True)
         button.setEnabled(False)  # Состояние текущей нажатой кнопки устанавливается во включенное и нажатое
+
+
+# Класс окна терминала, в котором будут транслироваться в реальном времени логи zabbix
+class WindowTerminal(QDialog):
+    def __init__(self, zabbix):
+        super().__init__()
+
+        # Создаем экземпляр класса с логикой терминала
+        self.terminal = Terminal(zabbix)
+
+        self.setFixedSize(300, 700)
+        self.setStyleSheet(open('res/styles/window_terminal.css').read())
+
+        # Создаем лейбл, в котором будут отображаться логи
+        self.label = QLabel()
+        self.label.setFixedWidth(275)
+        self.label.setAlignment(Qt.AlignTop)
+        self.label.setWordWrap(True)
+
+        # Создаем скролл, чтобы можно было смотреть предыдущие записи
+        scroll_area = QScrollArea(self)
+        scroll_area.setFixedSize(300, 700)
+        scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)  # Отключаем горизонтальный скролл
+        scroll_area.setWidgetResizable(True)  # Включаем динамическое масштабирование,
+        scroll_area.setWidget(self.label)     # т.к. у нас будет увеличиваться окно
+
+        # Загружаем сначала полный список логов
+        self.terminal.log_full_request(self.label)
+
+        # Ставим таймер секунду
+        self.timer = threading.Timer(1.0, self.update_terminal)
+        self.timer.start()
+
+    # Метод обновления лейбла логов
+    def update_terminal(self):
+        # Здесь тоже создаем таймер, чтобы его зарекурсировать
+        self.timer = threading.Timer(1.0, self.update_terminal)
+        self.timer.start()
+        # Если пришло обновление логов, то отображаем его
+        if self.terminal.log_request():
+            self.label.setText(self.label.text() + "\n" + self.terminal.last_checked_str)
 
 
 # Класс активного окна узлов сети
@@ -282,7 +332,7 @@ class WindowUsers(QDialog):
 if __name__ == '__main__':
     app = QApplication(sys.argv)
 
-    window_login = WindowApp(67)
+    window_login = WindowLogin()
     window_login.show()
 
     sys.exit(app.exec_())
