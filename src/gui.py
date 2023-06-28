@@ -4,10 +4,11 @@ import threading
 from PyQt5.QtCore import Qt, QSize
 from PyQt5.QtGui import QIcon, QPixmap
 from PyQt5.QtWidgets import QApplication, QLabel, QVBoxLayout, QLineEdit, \
-    QPushButton, QDialog, QMessageBox, QHBoxLayout, QScrollArea
+    QPushButton, QDialog, QMessageBox, QHBoxLayout, QScrollArea, QCheckBox, QWidget, \
+    QGridLayout
 
 from pyzabbix import ZabbixAPI, ZabbixAPIException
-from app_logic import Terminal
+from app_logic import Terminal, Hosts, Items, Triggers
 
 
 # Класс окна с авторизацией
@@ -122,7 +123,7 @@ class WindowApp(QDialog):
 
         # Создаем левый виджет, средний и правый лайауты с меню, рабочим окном и логами соответственно
         middle_layout = QVBoxLayout()
-        left_widget = WindowMenu(middle_layout)
+        left_widget = WindowMenu(middle_layout, self.zabbix)
         self.right_widget = WindowTerminal(self.zabbix)
 
         # Добавление левого, среднего и правого окон в основной лайаут
@@ -143,11 +144,17 @@ class WindowApp(QDialog):
         event.accept()
 
 
+    @staticmethod
+    def close_window(window_to_close):
+        if window_to_close is not None:
+            window_to_close.deleteLater()      
+
+
 # Класс меню (слева основного окна приложения)
 class WindowMenu(QDialog):
-    def __init__(self, action_layout):
+    def __init__(self, action_layout, zabbix):
         super().__init__()
-
+        self.zabbix = zabbix
         # Текущее открытое окно во активном лайауте
         self.cur_action_window = None
 
@@ -218,12 +225,12 @@ class WindowMenu(QDialog):
     def open_window_action(self, name_window):
         if name_window == "window_node_web" and not isinstance(self.cur_action_window, WindowNodeWeb):
             self.close_window_action()
-            window_node_web = WindowNodeWeb()
+            window_node_web = WindowNodeWeb(self.zabbix, self.action_layout)
             self.action_layout.addWidget(window_node_web)
             self.cur_action_window = window_node_web
         elif name_window == "window_users.css" and not isinstance(self.cur_action_window, WindowUsers):
             self.close_window_action()
-            window_users = WindowUsers()
+            window_users = WindowUsers(self.zabbix, self.action_layout)
             self.action_layout.addWidget(window_users)
             self.cur_action_window = window_users
 
@@ -294,47 +301,268 @@ class WindowTerminal(QDialog):
 
 # Класс активного окна узлов сети
 class WindowNodeWeb(QDialog):
-    def __init__(self):
+    def __init__(self, zabbix, action_layout):
         super().__init__()
-
+        
         self.setFixedSize(600, 700)
         self.setStyleSheet(open('res/styles/window_node_web.css').read())
 
-        main_layout = QHBoxLayout(self)
+        self.hosts = Hosts(zabbix)
+        self.zabbix = zabbix
+        self.action_layout = action_layout
+        self.tmp_host = None
+        self.simple_buttons_array = []
 
-        main_layout.setContentsMargins(0, 0, 0, 0)
-        main_layout.setSpacing(0)
+        root_VBox_layout = QVBoxLayout(self)
+        main_window_scroll_area = QScrollArea(self)
+        main_window_scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)  # Отключаем горизонтальный скролл
+        main_window_scroll_area.setWidgetResizable(True)  # Включаем динамическое масштабирование,
+        panel_of_buttons_change_widget = QWidget()
+        main_window_scroll_widget = QWidget()
+        panel_of_buttons_change_layout = QHBoxLayout()
+        add_item_button = QPushButton("Add")
+        self.simple_buttons_array.append(add_item_button)
+        add_item_button.clicked.connect(lambda: self.simple_button_clicked(add_item_button))
+        delete_choosen_hosts_button = QPushButton("Delete")
+        self.simple_buttons_array.append(delete_choosen_hosts_button)
+        delete_choosen_hosts_button.clicked.connect(lambda: self.simple_button_clicked(delete_choosen_hosts_button))
+        main_window_items_layout = QGridLayout()
+        
+        hosts = self.hosts.get_hosts()
+        for host in hosts:
+            current_item_widget = QWidget()
+            current_item_layout = QHBoxLayout()
 
-        self.arr = []
+            is_selected_checkbox = QCheckBox()
+            current_item_layout.addWidget(is_selected_checkbox)
 
-        b1 = QPushButton("Button 1")
-        b2 = QPushButton("Button 2")
-        b3 = QPushButton("Button 3")
+            current_item_name_label = QLabel()
+            current_item_name_label.setText(host['host'])
+            current_item_layout.addWidget(current_item_name_label)
 
-        self.arr.append(b1)
-        self.arr.append(b2)
-        self.arr.append(b3)
+            current_item_key_label = QLabel()
+            current_item_key_label.setText(host['hostid'])
+            current_item_layout.addWidget(current_item_key_label)
+            
+            current_host_items_button = QPushButton('items' + ' ' + str(len(self.hosts.get_items(host))))
+            current_item_layout.addWidget(current_host_items_button)
+            #current_host_items_button.clicked.connect(lambda: self.items_button_clicked(host)) Очень странно, что строка снизу уже работает, а это - нет
+            #current_host_items_button.clicked.connect(lambda state, x=host: self.items_button_clicked(x)) # Этот рабочий код для закоменченного варианта вызываемой функции
+            current_host_items_button.clicked.connect(self.items_button_clicked(host)) # Рабочий вариант для текущего варианта вызываемой фукнции
 
-        b1.clicked.connect(lambda: self.button_clicked(b1))
-        b2.clicked.connect(lambda: self.button_clicked(b2))
-        b3.clicked.connect(lambda: self.button_clicked(b3))
+            current_host_triggers_button = QPushButton('triggers' + ' ' + str(len(self.hosts.get_triggers(host))))
+            current_item_layout.addWidget(current_host_triggers_button)
+            current_host_triggers_button.clicked.connect(self.triggers_button_clicked(host))
+            
+            current_item_widget.setLayout(current_item_layout)
+            main_window_items_layout.addWidget(current_item_widget)    
+        
 
-        main_layout.addWidget(b1)
-        main_layout.addWidget(b2)
-        main_layout.addWidget(b3)
+        main_window_scroll_widget.setLayout(main_window_items_layout)
+        panel_of_buttons_change_layout.addWidget(add_item_button)
+        panel_of_buttons_change_layout.addWidget(delete_choosen_hosts_button)
+        main_window_scroll_area.setWidget(main_window_scroll_widget)
+        panel_of_buttons_change_widget.setLayout(panel_of_buttons_change_layout)
+        root_VBox_layout.addWidget(main_window_scroll_area)
+        root_VBox_layout.addWidget(panel_of_buttons_change_widget)
 
-    def button_clicked(self, button):
+    '''
+    def items_button_clicked(self, host):
+        window_items = WindowItems(self.zabbix, self.action_layout, host)
+        self.action_layout.addWidget(window_items)
+        WindowApp.close_window(self) 
+    '''
+
+    def items_button_clicked(self, host):
+        def button_clicked():
+            window_items = WindowItems(self.zabbix, self.action_layout, host)
+            self.action_layout.addWidget(window_items)
+            WindowApp.close_window(self)
+        return button_clicked    
+
+    # Как я понял, здесь мы возвращаем connect-y упакованную функцию button_clicked и выглядит это примерно так: button.clicked.connect(button_clicked)
+    # в которую уже упаковано значение host и self-поля, что позволяет корректно привязывать обработку событий
+
+    def triggers_button_clicked(self, host):
+        def button_clicked():
+            window_triggers = WindowTriggers(self.zabbix, self.action_layout, host)
+            self.action_layout.addWidget(window_triggers)
+            WindowApp.close_window(self)
+        return button_clicked
+
+
+    def simple_button_clicked(self, button):
         for btn in self.arr:  # Проверяем каждую кнопку
             if btn != button:  # Если она не равна текущей нажатой кнопке,
                 btn.setEnabled(True)
         button.setEnabled(False)
 
+      
+
+
+class WindowItems(QDialog):
+    def __init__(self, zabbix, action_layout, host):
+        super().__init__()
+        self.setFixedSize(600, 700)
+        self.setStyleSheet(open('res/styles/window_items.css').read())
+        
+        self.items = Items(zabbix)
+        self.zabbix = zabbix
+        self.host = host
+        self.action_layout = action_layout
+        self.simple_buttons_array = []
+
+        root_VBox_layout = QVBoxLayout(self)        
+        return_button = QPushButton()
+        return_button.setIcon(QIcon("res/img/return.png"))
+        return_button.setIconSize(QSize(50, 50))
+        return_button.clicked.connect(lambda: self.return_button_clicked())
+
+        main_window_scroll_area = QScrollArea(self)
+        main_window_scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)  # Отключаем горизонтальный скролл
+        main_window_scroll_area.setWidgetResizable(True)  # Включаем динамическое масштабирование,
+
+        panel_of_buttons_change_widget = QWidget()
+        main_window_scroll_widget = QWidget()
+        panel_of_buttons_change_layout = QHBoxLayout()
+
+        add_item_button = QPushButton("Add")
+        self.simple_buttons_array.append(add_item_button)
+        add_item_button.clicked.connect(lambda: self.simple_button_clicked(add_item_button))
+
+        delete_choosen_items_button = QPushButton("Delete")
+        self.simple_buttons_array.append(delete_choosen_items_button)
+        delete_choosen_items_button.clicked.connect(lambda: self.simple_button_clicked(delete_choosen_items_button))
+
+        main_window_items_layout = QGridLayout()
+        
+        items = self.items.get_items(self.host)
+        for item in items:
+            current_item_widget = QWidget()
+            current_item_layout = QHBoxLayout()
+
+            is_selected_checkbox = QCheckBox()
+            current_item_layout.addWidget(is_selected_checkbox)
+
+            current_item_name_label = QLabel()
+            current_item_name_label.setText(item['name'])
+            current_item_layout.addWidget(current_item_name_label)
+
+            current_item_id_label = QLabel()
+            current_item_id_label.setText(item['itemid'])
+            current_item_layout.addWidget(current_item_id_label)
+
+            current_item_key_label = QLabel()
+            current_item_key_label.setText(item['key_'])
+            current_item_layout.addWidget(current_item_key_label)
+            
+
+            current_item_widget.setLayout(current_item_layout)
+            main_window_items_layout.addWidget(current_item_widget)    
+
+        main_window_scroll_widget.setLayout(main_window_items_layout)
+        panel_of_buttons_change_layout.addWidget(add_item_button)
+        panel_of_buttons_change_layout.addWidget(delete_choosen_items_button)
+        main_window_scroll_area.setWidget(main_window_scroll_widget)
+        panel_of_buttons_change_widget.setLayout(panel_of_buttons_change_layout)
+        root_VBox_layout.addWidget(return_button)
+        root_VBox_layout.addWidget(main_window_scroll_area)
+        root_VBox_layout.addWidget(panel_of_buttons_change_widget)
+        
+
+    def return_button_clicked(self):
+        window_hosts = WindowNodeWeb(self.zabbix, self.action_layout)
+        self.action_layout.addWidget(window_hosts)
+        WindowApp.close_window(self)
+    
+    def simple_button_clicked(self, button):
+        pass
+
+
+class WindowTriggers(QDialog):
+    def __init__(self, zabbix, action_layout, host):
+        super().__init__()
+        self.setFixedSize(600, 700)
+        self.setStyleSheet(open('res/styles/window_triggers.css').read())
+        
+        self.triggers = Triggers(zabbix)
+        self.zabbix = zabbix
+        self.host = host
+        self.action_layout = action_layout
+        self.simple_buttons_array = []
+
+        root_VBox_layout = QVBoxLayout(self)        
+        return_button = QPushButton()
+        return_button.setIcon(QIcon("res/img/return.png"))
+        return_button.setIconSize(QSize(50, 50))
+        return_button.clicked.connect(lambda: self.return_button_clicked())
+
+        main_window_scroll_area = QScrollArea(self)
+        main_window_scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)  # Отключаем горизонтальный скролл
+        main_window_scroll_area.setWidgetResizable(True)  # Включаем динамическое масштабирование,
+
+        panel_of_buttons_change_widget = QWidget()
+
+        main_window_scroll_widget = QWidget()
+        panel_of_buttons_change_layout = QHBoxLayout()
+
+        add_trigger_button = QPushButton("Add")
+        self.simple_buttons_array.append(add_trigger_button)
+        add_trigger_button.clicked.connect(lambda: self.simple_button_clicked(add_trigger_button))
+
+        delete_choosen_triggers_button = QPushButton("Delete")
+        self.simple_buttons_array.append(delete_choosen_triggers_button)
+        delete_choosen_triggers_button.clicked.connect(lambda: self.simple_button_clicked(delete_choosen_triggers_button))
+
+        main_window_triggers_layout = QGridLayout()
+        
+        triggers = self.triggers.get_triggers(self.host)
+        for trigger in triggers:
+            current_trigger_widget = QWidget()
+            current_trigger_layout = QHBoxLayout()
+
+            is_selected_checkbox = QCheckBox()
+            current_trigger_layout.addWidget(is_selected_checkbox)
+
+            current_trigger_description_label = QLabel()
+            current_trigger_description_label.setText(trigger['description'])
+            current_trigger_layout.addWidget(current_trigger_description_label)
+
+            current_trigger_id_label = QLabel()
+            current_trigger_id_label.setText(trigger['triggerid'])
+            current_trigger_layout.addWidget(current_trigger_id_label)
+
+            current_trigger_expression_label = QLabel()
+            current_trigger_expression_label.setText(trigger['expression'])
+            current_trigger_layout.addWidget(current_trigger_expression_label)
+            
+
+            current_trigger_widget.setLayout(current_trigger_layout)
+            main_window_triggers_layout.addWidget(current_trigger_widget)    
+
+        main_window_scroll_widget.setLayout(main_window_triggers_layout)
+        panel_of_buttons_change_layout.addWidget(add_trigger_button)
+        panel_of_buttons_change_layout.addWidget(delete_choosen_triggers_button)
+        main_window_scroll_area.setWidget(main_window_scroll_widget)
+        panel_of_buttons_change_widget.setLayout(panel_of_buttons_change_layout)
+        root_VBox_layout.addWidget(return_button)
+        root_VBox_layout.addWidget(main_window_scroll_area)
+        root_VBox_layout.addWidget(panel_of_buttons_change_widget)
+        
+
+    def return_button_clicked(self):
+        window_hosts = WindowNodeWeb(self.zabbix, self.action_layout)
+        self.action_layout.addWidget(window_hosts)
+        WindowApp.close_window(self)
+    
+    def simple_button_clicked(self, button):
+        pass
+
 
 # Класс активного окна с пользователями
 class WindowUsers(QDialog):
-    def __init__(self):
+    def __init__(self, zabbix, action_layout):
         super().__init__()
-
         self.setFixedSize(600, 700)
         self.setStyleSheet(open('res/styles/window_users.css').read())
 
