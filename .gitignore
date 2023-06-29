@@ -1,2 +1,3 @@
-cat .gitignore
-.idea
+.gitignore
+Pipfile
+/src/app_logic/__pycache__
