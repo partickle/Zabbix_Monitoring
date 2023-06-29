@@ -51,10 +51,10 @@ class Terminal:
         for log in reversed(logs):  # Логи обычно записываются в обратном порядке, поэтому reversed
             new_str = log['eventid'] + "." + get_norm_data(int(log['clock'])) + " " + log['name']
             label.setText(label.text() + new_str + "\n")  # Добавляем в лейбл лог
-            self.last_checked_str = new_str  # И обновляем последнюю добавленную строку
+            self.last_checked_str = new_str # И обновляем последнюю добавленную строку
 
 
 # Функция для преобразования даты из UNIX timestamp в привычную
 def get_norm_data(unix_timestamp):
-    datetime_obj = datetime.datetime.fromtimestamp(unix_timestamp)
+    datetime_obj = datetime.datetime.utcfromtimestamp(unix_timestamp)
     return datetime_obj.strftime('%Y-%m-%d.%H:%M:%S')
