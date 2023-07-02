@@ -5,7 +5,7 @@ from PyQt5.QtCore import Qt, QSize
 from PyQt5.QtGui import QIcon, QPixmap
 from PyQt5.QtWidgets import QApplication, QLabel, QVBoxLayout, QLineEdit, \
     QPushButton, QDialog, QMessageBox, QHBoxLayout, QScrollArea, QCheckBox, QWidget, \
-    QGridLayout
+    QGridLayout, QWidgetItem
 
 from pyzabbix import ZabbixAPI, ZabbixAPIException
 from app_logic import Terminal, Hosts, Items, Triggers
@@ -223,12 +223,12 @@ class WindowMenu(QDialog):
     # Метод, который открывает новое окно в активном лайауте.
     # Не теряет состояние текущего окна, если нажать еще раз на кнопку
     def open_window_action(self, name_window):
-        if name_window == "window_node_web" and not isinstance(self.cur_action_window, WindowNodeWeb):
+        if name_window == "window_node_web":
             self.close_window_action()
             window_node_web = WindowNodeWeb(self.zabbix, self.action_layout)
             self.action_layout.addWidget(window_node_web)
             self.cur_action_window = window_node_web
-        elif name_window == "window_users.css" and not isinstance(self.cur_action_window, WindowUsers):
+        elif name_window == "window_users.css":
             self.close_window_action()
             window_users = WindowUsers(self.zabbix, self.action_layout)
             self.action_layout.addWidget(window_users)
@@ -318,10 +318,10 @@ class WindowNodeWeb(QDialog):
         panel_of_buttons_change_layout = QHBoxLayout()
         add_item_button = QPushButton("Add")
         self.simple_buttons_array.append(add_item_button)
-        add_item_button.clicked.connect(lambda: self.simple_button_clicked(add_item_button))
+        add_item_button.clicked.connect(lambda: self.simple_button_clicked(add_item_button, main_window_items_layout))
         delete_choosen_hosts_button = QPushButton("Delete")
         self.simple_buttons_array.append(delete_choosen_hosts_button)
-        delete_choosen_hosts_button.clicked.connect(lambda: self.simple_button_clicked(delete_choosen_hosts_button))
+        delete_choosen_hosts_button.clicked.connect(lambda: self.simple_button_clicked(delete_choosen_hosts_button, main_window_items_layout))
         main_window_items_layout = QGridLayout()
         
         hosts = self.hosts.get_hosts()
@@ -387,14 +387,32 @@ class WindowNodeWeb(QDialog):
         return button_clicked
 
 
-    def simple_button_clicked(self, button):
-        for btn in self.arr:  # Проверяем каждую кнопку
-            if btn != button:  # Если она не равна текущей нажатой кнопке,
-                btn.setEnabled(True)
-        button.setEnabled(False)
+    def simple_button_clicked(self, button, main_window_items_layout):
+        layout = QGridLayout()
+        layout.itemAtPosition(0,0)
+        sdf = QVBoxLayout()
+        ad = QWidget()
+        ad.layout()
+        if button == self.simple_buttons_array[0]:
+            window_add_host = WindowAddHost(self.zabbix, self.action_layout)
+            self.action_layout.addWidget(window_add_host)
+            WindowApp.close_window(self)
+        elif button == self.simple_buttons_array[1]:
+            hostids_to_delete = {}
+            print(main_window_items_layout.rowCount())
+            for i in range(main_window_items_layout.rowCount()):
+                value = main_window_items_layout.itemAtPosition(i,0).widget().layout().itemAt(0).widget().isChecked()
+                key = main_window_items_layout.itemAtPosition(i,0).widget().layout().itemAt(2).widget().text()
+                             
+
+
 
       
-
+class WindowAddHost(QDialog):
+    def __init__(self, zabbix, action_layout):
+        super().__init__()
+        self.setFixedSize(600, 700)
+        self.setStyleSheet(open('res/styles/window_add_host.css').read())
 
 class WindowItems(QDialog):
     def __init__(self, zabbix, action_layout, host):
