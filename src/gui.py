@@ -4,7 +4,7 @@ import threading
 from PyQt5.QtCore import Qt, QSize
 from PyQt5.QtGui import QIcon, QPixmap
 from PyQt5.QtWidgets import QApplication, QLabel, QVBoxLayout, QLineEdit, \
-    QPushButton, QDialog, QMessageBox, QHBoxLayout, QScrollArea
+    QPushButton, QDialog, QMessageBox, QHBoxLayout, QScrollArea, QGridLayout
 
 from pyzabbix import ZabbixAPI, ZabbixAPIException
 from app_logic import Terminal
@@ -190,7 +190,7 @@ class WindowMenu(QDialog):
         button_users = QPushButton("Пользователи")
         self.buttons_menu.append(button_users)
         button_users.clicked.connect(lambda: self.button_clicked(button_users))
-        button_users.clicked.connect(lambda: self.open_window_action("window_users.css"))
+        button_users.clicked.connect(lambda: self.open_window_action("window_users"))
 
         menu_layout.addWidget(button_node_web)
         menu_layout.addWidget(button_users)
@@ -199,22 +199,30 @@ class WindowMenu(QDialog):
         quick_layout = QHBoxLayout()
 
         # Создаем кнопки
-        button_user = QPushButton()
-        button_user.setObjectName("quick_buttons")  # Присваиваем отдельный класс для стилизации
-        button_user.setIcon(QIcon("res/icon/user.svg"))  # Добавляем в кнопку иконку в svg-формате для качества
-        button_user.setIconSize(QSize(48, 48))  # Задаем размер
-        quick_layout.addWidget(button_user)
+        button_account = QPushButton()
+        self.buttons_menu.append(button_account)
+        button_account.setObjectName("quick_buttons")  # Присваиваем отдельный класс для стилизации
+        button_account.setIcon(QIcon("res/icon/user.svg"))  # Добавляем в кнопку иконку в svg-формате для качества
+        button_account.setIconSize(QSize(48, 48))  # Задаем размер
+        button_account.clicked.connect(lambda: self.button_clicked(button_account))
+        button_account.clicked.connect(lambda: self.open_window_action("window_account"))
+        quick_layout.addWidget(button_account)
 
         button_settings = QPushButton()
+        self.buttons_menu.append(button_settings)
         button_settings.setObjectName("quick_buttons")
         button_settings.setIcon(QIcon("res/icon/settings.svg"))
         button_settings.setIconSize(QSize(48, 48))
+        button_settings.clicked.connect(lambda: self.button_clicked(button_settings))
+        button_settings.clicked.connect(lambda: self.open_window_action("window_settings"))
         quick_layout.addWidget(button_settings)
 
         button_logout = QPushButton()
+        self.buttons_menu.append(button_logout)
         button_logout.setObjectName("quick_buttons")
         button_logout.setIcon(QIcon('res/icon/logout.svg'))
         button_logout.setIconSize(QSize(48, 48))
+        button_logout.clicked.connect(lambda: self.button_clicked(button_logout))
         button_logout.clicked.connect(self.button_logout)
         quick_layout.addWidget(button_logout)
 
@@ -230,11 +238,21 @@ class WindowMenu(QDialog):
             window_node_web = WindowNodeWeb()
             self.action_layout.addWidget(window_node_web)
             self.cur_action_window = window_node_web
-        elif name_window == "window_users.css" and not isinstance(self.cur_action_window, WindowUsers):
+        elif name_window == "window_users" and not isinstance(self.cur_action_window, WindowUsers):
             self.close_window_action()
             window_users = WindowUsers()
             self.action_layout.addWidget(window_users)
             self.cur_action_window = window_users
+        elif name_window == "window_account" and not isinstance(self.cur_action_window, WindowAccount):
+            self.close_window_action()
+            window_account = WindowAccount(self.zabbix)
+            self.action_layout.addWidget(window_account)
+            self.cur_action_window = window_account
+        elif name_window == "window_settings" and not isinstance(self.cur_action_window, WindowSettings):
+            self.close_window_action()
+            window_settings = WindowSettings(self.zabbix)
+            self.action_layout.addWidget(window_settings)
+            self.cur_action_window = window_settings
 
     # Метод выхода из учетной записи
     def button_logout(self):
@@ -258,6 +276,95 @@ class WindowMenu(QDialog):
             if btn != button:  # Если она не равна текущей нажатой кнопке,
                 btn.setEnabled(True)
         button.setEnabled(False)  # Состояние текущей нажатой кнопки устанавливается во включенное и нажатое
+
+
+class WindowAccount(QDialog):
+    def __init__(self, zabbix):
+        super().__init__()
+
+        # Создаем словарь с данными для того, чтобы не делать кучу запросов
+        self.data = zabbix.user.checkAuthentication(sessionid=zabbix.auth)
+
+        self.setFixedSize(600, 700)
+        self.setStyleSheet(open('res/styles/window_account.css').read())
+
+        # Создаем все нужные лейблы
+        title = QLabel("Пользователь")
+        title.setObjectName("title")
+
+        icon = QLabel()
+        icon.setPixmap(QIcon("res/icon/user_account.svg").pixmap(150, 150))
+
+        name = QLabel(self.data.get('name'))
+        name.setObjectName("name")
+
+        surname = QLabel(self.data.get('surname'))
+        surname.setObjectName("name")
+
+        username_label = QLabel("Логин: ")
+        username_label.setObjectName("label")
+
+        lang_label = QLabel("Язык: ")
+        lang_label.setObjectName("label")
+
+        username = QLabel(self.data.get('username'))
+        lang = QLabel(self.data.get('lang'))
+
+        # Создаем главный лайаут
+        main_layout = QVBoxLayout(self)
+
+        # Создаем верхний и нижний лайауты
+        top_layout = QHBoxLayout()
+        bottom_layout = QHBoxLayout()
+        bottom_layout.setContentsMargins(0, 0, 0, 300)
+
+        # Создаем угловые лайауты
+        left_top_layout = QVBoxLayout()
+        left_top_layout.setAlignment(Qt.AlignRight | Qt.AlignBottom)
+
+        right_top_layout = QVBoxLayout()
+        right_top_layout.setAlignment(Qt.AlignLeft | Qt.AlignBottom)
+
+        left_bottom_layout = QVBoxLayout()
+        left_bottom_layout.setAlignment(Qt.AlignRight | Qt.AlignTop)
+
+        right_bottom_layout = QVBoxLayout()
+        right_bottom_layout.setAlignment(Qt.AlignLeft | Qt.AlignTop)
+
+        # Добавляем все лайауты
+        main_layout.addWidget(title)
+        main_layout.addLayout(top_layout)
+        main_layout.addLayout(bottom_layout)
+
+        top_layout.addLayout(left_top_layout)
+        top_layout.addLayout(right_top_layout)
+        bottom_layout.addLayout(left_bottom_layout)
+        bottom_layout.addLayout(right_bottom_layout)
+
+        # А потом и лейблы на них
+        left_top_layout.addWidget(icon)
+
+        right_top_layout.addWidget(name)
+        right_top_layout.addWidget(surname)
+
+        left_bottom_layout.addWidget(username_label)
+        left_bottom_layout.addWidget(lang_label)
+
+        right_bottom_layout.addWidget(username)
+        right_bottom_layout.addWidget(lang)
+
+        main_layout.setContentsMargins(0, 0, 0, 0)  # Отступы между краями главного лайаута
+
+
+class WindowSettings(QDialog):
+    def __init__(self, zabbix):
+        super().__init__()
+
+        # Инициализируем текущую сессию
+        self.zabbix = zabbix
+
+        self.setFixedSize(600, 700)
+        self.setStyleSheet(open('res/styles/window_settings.css').read())
 
 
 # Класс окна терминала, в котором будут транслироваться в реальном времени логи zabbix
@@ -314,35 +421,6 @@ class WindowNodeWeb(QDialog):
 
         self.setFixedSize(600, 700)
         self.setStyleSheet(open('res/styles/window_node_web.css').read())
-
-        main_layout = QHBoxLayout(self)
-
-        main_layout.setContentsMargins(0, 0, 0, 0)
-        main_layout.setSpacing(0)
-
-        self.arr = []
-
-        b1 = QPushButton("Button 1")
-        b2 = QPushButton("Button 2")
-        b3 = QPushButton("Button 3")
-
-        self.arr.append(b1)
-        self.arr.append(b2)
-        self.arr.append(b3)
-
-        b1.clicked.connect(lambda: self.button_clicked(b1))
-        b2.clicked.connect(lambda: self.button_clicked(b2))
-        b3.clicked.connect(lambda: self.button_clicked(b3))
-
-        main_layout.addWidget(b1)
-        main_layout.addWidget(b2)
-        main_layout.addWidget(b3)
-
-    def button_clicked(self, button):
-        for btn in self.arr:  # Проверяем каждую кнопку
-            if btn != button:  # Если она не равна текущей нажатой кнопке,
-                btn.setEnabled(True)
-        button.setEnabled(False)
 
 
 # Класс активного окна с пользователями
