@@ -122,7 +122,7 @@ class WindowApp(QDialog):
 
         # Создаем левый виджет, средний и правый лайауты с меню, рабочим окном и логами соответственно
         middle_layout = QVBoxLayout()
-        left_widget = WindowMenu(middle_layout)
+        left_widget = WindowMenu(middle_layout, self.zabbix, self)
         self.right_widget = WindowTerminal(self.zabbix)
 
         # Добавление левого, среднего и правого окон в основной лайаут
@@ -145,8 +145,17 @@ class WindowApp(QDialog):
 
 # Класс меню (слева основного окна приложения)
 class WindowMenu(QDialog):
-    def __init__(self, action_layout):
+    def __init__(self, action_layout, zabbix, window_app):
         super().__init__()
+
+        # Присваиваем текущую сессию
+        self.zabbix = zabbix
+
+        # Присваиваем окно приложения
+        self.window_app = window_app
+
+        # Создаем пустую переменную окна авторизации
+        self.window_login = None
 
         # Текущее открытое окно во активном лайауте
         self.cur_action_window = None
@@ -206,7 +215,7 @@ class WindowMenu(QDialog):
         button_logout.setObjectName("quick_buttons")
         button_logout.setIcon(QIcon('res/icon/logout.svg'))
         button_logout.setIconSize(QSize(48, 48))
-        button_logout.clicked.connect(QApplication.closeAllWindows)  # Закрываем все окна, таймер тоже перестанет идти
+        button_logout.clicked.connect(self.button_logout)
         quick_layout.addWidget(button_logout)
 
         # Добавляем на лайаут
@@ -227,6 +236,16 @@ class WindowMenu(QDialog):
             self.action_layout.addWidget(window_users)
             self.cur_action_window = window_users
 
+    # Метод выхода из учетной записи
+    def button_logout(self):
+        # Закрытие окна приложения
+        self.window_app.close()
+
+        # Создание окна авторизации
+        self.window_login = WindowLogin()
+        self.window_login.show()
+        self.window_login.exec_()
+
     # Метод, который закрывает текущее окно в активном лайауте
     def close_window_action(self):
         if self.cur_action_window is not None:
@@ -238,9 +257,7 @@ class WindowMenu(QDialog):
         for btn in self.buttons_menu:  # Проверяем каждую кнопку
             if btn != button:  # Если она не равна текущей нажатой кнопке,
                 btn.setEnabled(True)
-                btn.setContentsMargins(0, 0, 0, 0)
         button.setEnabled(False)  # Состояние текущей нажатой кнопки устанавливается во включенное и нажатое
-        btn.setContentsMargins(0, 0, 0, 0)
 
 
 # Класс окна терминала, в котором будут транслироваться в реальном времени логи zabbix
