@@ -1,0 +1,28 @@
+QDialog {
+    background-color: #ac000000;
+}
+
+QLabel {
+    color: #ffffff;
+    font-size: 20px;
+}
+
+QLabel#title {
+    color: #ffffff;
+    font-weight: bold;
+    font-size: 40px;
+    padding: 20px;
+}
+
+QLabel#name {
+    color: #ffffff;
+    font-weight: bold;
+    font-size: 30px;
+    padding: 5px;
+}
+
+QLabel#label {
+    color: #ffffff;
+    font-weight: bold;
+    font-size: 20px;
+}
