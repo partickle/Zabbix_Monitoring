@@ -3,8 +3,10 @@ class Triggers:
         self.zabbix = zabbix
         self.hosts_info = zabbix.host.get(output=['hostid', 'name', 'host'])
         self.hosts = [host['hostid'] for host in self.hosts_info]
-        self.triggers = zabbix.trigger.get(hostids=self.hosts, output=['triggerid', 'description', 'expression'], selectHosts=['host', 'hostid'])
-    
+        self.triggers = zabbix.trigger.get(
+            hostids=self.hosts,
+            output=['triggerid', 'description', 'expression'],
+            selectHosts=['host', 'hostid'])
 
     def get_triggers(self, host):
         triggers_of_host = []
