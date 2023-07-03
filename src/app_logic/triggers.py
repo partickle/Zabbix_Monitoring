@@ -6,7 +6,8 @@ class Triggers:
         self.triggers = zabbix.trigger.get(
             hostids=self.hosts,
             output=['triggerid', 'description', 'expression'],
-            selectHosts=['host', 'hostid'])
+            selectHosts=['host', 'hostid']
+        )
 
     def get_triggers(self, host):
         triggers_of_host = []
