@@ -306,8 +306,6 @@ class WindowNodeWeb(QDialog):
         self.hosts = Hosts(zabbix)
         self.zabbix = zabbix
         self.action_layout = action_layout
-        self.tmp_host = None
-        self.simple_buttons_array = []
 
         root_VBox_layout = QVBoxLayout(self)
         main_window_scroll_area = QScrollArea(self)
@@ -316,12 +314,10 @@ class WindowNodeWeb(QDialog):
         panel_of_buttons_change_widget = QWidget()
         main_window_scroll_widget = QWidget()
         panel_of_buttons_change_layout = QHBoxLayout()
-        add_item_button = QPushButton("Add")
-        self.simple_buttons_array.append(add_item_button)
-        add_item_button.clicked.connect(lambda: self.simple_button_clicked(add_item_button, main_window_items_layout))
+        add_host_button = QPushButton("Add")
+        add_host_button.clicked.connect(lambda: self.add_host_button_clicked(main_window_items_layout))
         delete_choosen_hosts_button = QPushButton("Delete")
-        self.simple_buttons_array.append(delete_choosen_hosts_button)
-        delete_choosen_hosts_button.clicked.connect(lambda: self.simple_button_clicked(delete_choosen_hosts_button, main_window_items_layout))
+        delete_choosen_hosts_button.clicked.connect(lambda: self.delete_choosen_hosts_button_clicked(main_window_items_layout))
         main_window_items_layout = QGridLayout()
         
         hosts = self.hosts.get_hosts()
@@ -386,23 +382,17 @@ class WindowNodeWeb(QDialog):
             WindowApp.close_window(self)
         return button_clicked
 
+    def add_host_button_clicked(self, main_window_items_layout):
+        window_add_host = WindowAddHost(self.zabbix, self.action_layout)
+        self.action_layout.addWidget(window_add_host)
+        WindowApp.close_window(self)
 
-    def simple_button_clicked(self, button, main_window_items_layout):
-        layout = QGridLayout()
-        layout.itemAtPosition(0,0)
-        sdf = QVBoxLayout()
-        ad = QWidget()
-        ad.layout()
-        if button == self.simple_buttons_array[0]:
-            window_add_host = WindowAddHost(self.zabbix, self.action_layout)
-            self.action_layout.addWidget(window_add_host)
-            WindowApp.close_window(self)
-        elif button == self.simple_buttons_array[1]:
-            hostids_to_delete = {}
-            print(main_window_items_layout.rowCount())
-            for i in range(main_window_items_layout.rowCount()):
-                value = main_window_items_layout.itemAtPosition(i,0).widget().layout().itemAt(0).widget().isChecked()
-                key = main_window_items_layout.itemAtPosition(i,0).widget().layout().itemAt(2).widget().text()
+    def delete_choosen_hosts_button_clicked(self, main_window_items_layout):  
+        hostids_to_delete = {}
+        print(main_window_items_layout.rowCount())
+        for i in range(main_window_items_layout.rowCount()):
+            value = main_window_items_layout.itemAtPosition(i,0).widget().layout().itemAt(0).widget().isChecked()
+            key = main_window_items_layout.itemAtPosition(i,0).widget().layout().itemAt(2).widget().text()
                              
 
 
@@ -424,7 +414,6 @@ class WindowItems(QDialog):
         self.zabbix = zabbix
         self.host = host
         self.action_layout = action_layout
-        self.simple_buttons_array = []
 
         root_VBox_layout = QVBoxLayout(self)        
         return_button = QPushButton()
@@ -441,12 +430,10 @@ class WindowItems(QDialog):
         panel_of_buttons_change_layout = QHBoxLayout()
 
         add_item_button = QPushButton("Add")
-        self.simple_buttons_array.append(add_item_button)
-        add_item_button.clicked.connect(lambda: self.simple_button_clicked(add_item_button))
+        add_item_button.clicked.connect(lambda: self.add_item_button_clicked())
 
         delete_choosen_items_button = QPushButton("Delete")
-        self.simple_buttons_array.append(delete_choosen_items_button)
-        delete_choosen_items_button.clicked.connect(lambda: self.simple_button_clicked(delete_choosen_items_button))
+        delete_choosen_items_button.clicked.connect(lambda: self.delete_choosen_items_button_clicked())
 
         main_window_items_layout = QGridLayout()
         
@@ -489,7 +476,10 @@ class WindowItems(QDialog):
         self.action_layout.addWidget(window_hosts)
         WindowApp.close_window(self)
     
-    def simple_button_clicked(self, button):
+    def add_item_button_clicked(self):
+        pass
+
+    def delete_choosen_items_button_clicked(self):
         pass
 
 
@@ -503,7 +493,6 @@ class WindowTriggers(QDialog):
         self.zabbix = zabbix
         self.host = host
         self.action_layout = action_layout
-        self.simple_buttons_array = []
 
         root_VBox_layout = QVBoxLayout(self)        
         return_button = QPushButton()
@@ -521,12 +510,10 @@ class WindowTriggers(QDialog):
         panel_of_buttons_change_layout = QHBoxLayout()
 
         add_trigger_button = QPushButton("Add")
-        self.simple_buttons_array.append(add_trigger_button)
-        add_trigger_button.clicked.connect(lambda: self.simple_button_clicked(add_trigger_button))
+        add_trigger_button.clicked.connect(lambda: self.add_trigger_button_clicked())
 
         delete_choosen_triggers_button = QPushButton("Delete")
-        self.simple_buttons_array.append(delete_choosen_triggers_button)
-        delete_choosen_triggers_button.clicked.connect(lambda: self.simple_button_clicked(delete_choosen_triggers_button))
+        delete_choosen_triggers_button.clicked.connect(lambda: self.delete_choosen_triggers_button_clicked())
 
         main_window_triggers_layout = QGridLayout()
         
@@ -569,7 +556,10 @@ class WindowTriggers(QDialog):
         self.action_layout.addWidget(window_hosts)
         WindowApp.close_window(self)
     
-    def simple_button_clicked(self, button):
+    def add_trigger_button_clicked(self):
+        pass
+
+    def delete_choosen_triggers_button_clicked(self):
         pass
 
 
