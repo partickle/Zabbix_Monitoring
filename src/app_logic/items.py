@@ -3,8 +3,10 @@ class Items:
         self.zabbix = zabbix
         self.hosts_info = zabbix.host.get(output=['hostid', 'name', 'host'])
         self.hosts = [host['hostid'] for host in self.hosts_info]
-        self.items = zabbix.item.get(hostids=self.hosts, output=['itemid', 'name', 'key_', 'hostid'])
-    
+        self.items = zabbix.item.get(
+            hostids=self.hosts,
+            output=['itemid', 'name', 'key_', 'hostid']
+        )
 
     def get_items(self, host):
         items_of_host = []
