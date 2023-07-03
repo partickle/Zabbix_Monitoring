@@ -428,7 +428,7 @@ class WindowItems(QDialog):
 
         root_VBox_layout = QVBoxLayout(self)        
         return_button = QPushButton()
-        return_button.setIcon(QIcon("res/img/return.png"))
+        return_button.setIcon(QIcon("res/icon/arrow_back.svg"))
         return_button.setIconSize(QSize(50, 50))
         return_button.clicked.connect(lambda: self.return_button_clicked())
 
@@ -507,7 +507,7 @@ class WindowTriggers(QDialog):
 
         root_VBox_layout = QVBoxLayout(self)        
         return_button = QPushButton()
-        return_button.setIcon(QIcon("res/img/return.png"))
+        return_button.setIcon(QIcon("res/icon/arrow_back.svg"))
         return_button.setIconSize(QSize(50, 50))
         return_button.clicked.connect(lambda: self.return_button_clicked())
 
