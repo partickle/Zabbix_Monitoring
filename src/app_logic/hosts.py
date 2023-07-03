@@ -3,8 +3,15 @@ class Hosts:
         self.zabbix = zabbix
         self.hosts_info = zabbix.host.get(output=['hostid', 'name', 'host'])
         self.hosts = [host['hostid'] for host in self.hosts_info]
-        self.items = zabbix.item.get(hostids=self.hosts, output=['itemid', 'name', 'key_', 'hostid'])
-        self.triggers = zabbix.trigger.get(hostids=self.hosts, output=['triggerid', 'description', 'expression'], selectHosts=['host', 'hostid'])
+        self.items = zabbix.item.get(
+            hostids=self.hosts,
+            output=['itemid', 'name', 'key_', 'hostid']
+        )
+        self.triggers = zabbix.trigger.get(
+            hostids=self.hosts,
+            output=['triggerid', 'description', 'expression'],
+            selectHosts=['host', 'hostid']
+        )
 
     def get_hosts(self):
         hosts_to_show = []
