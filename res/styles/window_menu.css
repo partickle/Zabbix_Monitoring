@@ -10,21 +10,19 @@ QPushButton {
     font-weight: bold;
     font-size: 20px;
     border-radius: 0px;
-    border-bottom-left-radius: 15px;
 }
 
 QPushButton:hover {
     background-color: #aa000000;
     color: #ffffff;
-    border-bottom-left-radius: 15px;
     font-size: 21px;
 }
 
 QPushButton:disabled {
     color: #8642ee;
-    background-color: #a9ffffff;
-    border-top-left-radius: 0px;
+    background-color: #d7b4f0;
     border-bottom-left-radius: 15px;
+    margin-left: 10px;
 }
 
 QPushButton#quick_buttons {
@@ -38,4 +36,10 @@ QPushButton#quick_buttons {
 QPushButton:hover#quick_buttons {
     background-color: #b2000000;
     color: #ffffff;
+}
+
+QPushButton:disabled#quick_buttons {
+    background-color: #b2000000;
+    color: #ffffff;
+    margin-left: 0px;
 }

@@ -125,7 +125,7 @@ class WindowApp(QDialog):
         # Создаем левый виджет, средний и правый лайауты с
         # меню, рабочим окном и логами соответственно
         middle_layout = QVBoxLayout()
-        left_widget = WindowMenu(middle_layout, self.zabbix)
+        left_widget = WindowMenu(middle_layout, self.zabbix, self)
         self.right_widget = WindowTerminal(self.zabbix)
 
         # Добавление левого, среднего и правого окон в основной лайаут
@@ -158,9 +158,18 @@ class WindowApp(QDialog):
 
 # Класс меню (слева основного окна приложения)
 class WindowMenu(QDialog):
-    def __init__(self, action_layout, zabbix):
+    def __init__(self, action_layout, zabbix, window_app):
         super().__init__()
+
+        # Присваиваем текущую сессию
         self.zabbix = zabbix
+
+        # Присваиваем окно приложения
+        self.window_app = window_app
+
+        # Создаем пустую переменную окна авторизации
+        self.window_login = None
+        
         # Текущее открытое окно во активном лайауте
         self.cur_action_window = None
 
@@ -179,7 +188,7 @@ class WindowMenu(QDialog):
         # Создаем лайаут с меню и настраиваем отступы
         menu_layout = QVBoxLayout()
         menu_layout.setAlignment(Qt.AlignTop)
-        menu_layout.setContentsMargins(10, 0, 0, 0)
+        menu_layout.setContentsMargins(0, 0, 0, 0)
         menu_layout.setSpacing(0)
 
         # Создаем массив с кнопками
@@ -189,21 +198,13 @@ class WindowMenu(QDialog):
         button_node_web = QPushButton("Узлы сети")
         self.buttons_menu.append(button_node_web)
         # Для каждой кнопки подключаем сигнал clicked к слоту button_clicked
-        button_node_web.clicked.connect(
-            lambda: self.button_clicked(button_node_web)
-        )
-        button_node_web.clicked.connect(
-            lambda: self.open_window_action("window_node_web")
-        )
+        button_node_web.clicked.connect(lambda: self.button_clicked(button_node_web))
+        button_node_web.clicked.connect(lambda: self.open_window_action("window_node_web"))
 
         button_users = QPushButton("Пользователи")
         self.buttons_menu.append(button_users)
-        button_users.clicked.connect(
-            lambda: self.button_clicked(button_users)
-        )
-        button_users.clicked.connect(
-            lambda: self.open_window_action("window_users.css")
-        )
+        button_users.clicked.connect(lambda: self.button_clicked(button_users))
+        button_users.clicked.connect(lambda: self.open_window_action("window_users"))
 
         menu_layout.addWidget(button_node_web)
         menu_layout.addWidget(button_users)
@@ -212,29 +213,31 @@ class WindowMenu(QDialog):
         quick_layout = QHBoxLayout()
 
         # Создаем кнопки
-        button_user = QPushButton()
-
-        # Присваиваем отдельный класс для стилизации
-        button_user.setObjectName("quick_buttons")
-        # Добавляем в кнопку иконку в svg-формате для качества
-        button_user.setIcon(QIcon("res/icon/user.svg"))
-        # Задаем размер
-        button_user.setIconSize(QSize(48, 48))
-
-        quick_layout.addWidget(button_user)
+        button_account = QPushButton()
+        self.buttons_menu.append(button_account)
+        button_account.setObjectName("quick_buttons")  # Присваиваем отдельный класс для стилизации
+        button_account.setIcon(QIcon("res/icon/user.svg"))  # Добавляем в кнопку иконку в svg-формате для качества
+        button_account.setIconSize(QSize(48, 48))  # Задаем размер
+        button_account.clicked.connect(lambda: self.button_clicked(button_account))
+        button_account.clicked.connect(lambda: self.open_window_action("window_account"))
+        quick_layout.addWidget(button_account)
 
         button_settings = QPushButton()
+        self.buttons_menu.append(button_settings)
         button_settings.setObjectName("quick_buttons")
         button_settings.setIcon(QIcon("res/icon/settings.svg"))
         button_settings.setIconSize(QSize(48, 48))
+        button_settings.clicked.connect(lambda: self.button_clicked(button_settings))
+        button_settings.clicked.connect(lambda: self.open_window_action("window_settings"))
         quick_layout.addWidget(button_settings)
 
         button_logout = QPushButton()
+        self.buttons_menu.append(button_logout)
         button_logout.setObjectName("quick_buttons")
         button_logout.setIcon(QIcon('res/icon/logout.svg'))
         button_logout.setIconSize(QSize(48, 48))
-        # По нажатию на кнопку, закрываем все окна, таймер тоже перестанет идти
-        button_logout.clicked.connect(QApplication.closeAllWindows)
+        button_logout.clicked.connect(lambda: self.button_clicked(button_logout))
+        button_logout.clicked.connect(self.button_logout)
         quick_layout.addWidget(button_logout)
 
         # Добавляем на лайаут
@@ -244,16 +247,36 @@ class WindowMenu(QDialog):
     # Метод, который открывает новое окно в активном лайауте.
     # Не теряет состояние текущего окна, если нажать еще раз на кнопку
     def open_window_action(self, name_window):
-        if name_window == "window_node_web":
+        if name_window == "window_node_web" and not isinstance(self.cur_action_window, WindowNodeWeb):
             self.close_window_action()
             window_node_web = WindowNodeWeb(self.zabbix, self.action_layout)
             self.action_layout.addWidget(window_node_web)
             self.cur_action_window = window_node_web
-        elif name_window == "window_users.css":
+        elif name_window == "window_users" and not isinstance(self.cur_action_window, WindowUsers):
             self.close_window_action()
             window_users = WindowUsers(self.zabbix, self.action_layout)
             self.action_layout.addWidget(window_users)
             self.cur_action_window = window_users
+        elif name_window == "window_account" and not isinstance(self.cur_action_window, WindowAccount):
+            self.close_window_action()
+            window_account = WindowAccount(self.zabbix)
+            self.action_layout.addWidget(window_account)
+            self.cur_action_window = window_account
+        elif name_window == "window_settings" and not isinstance(self.cur_action_window, WindowSettings):
+            self.close_window_action()
+            window_settings = WindowSettings(self.zabbix)
+            self.action_layout.addWidget(window_settings)
+            self.cur_action_window = window_settings
+
+    # Метод выхода из учетной записи
+    def button_logout(self):
+        # Закрытие окна приложения
+        self.window_app.close()
+
+        # Создание окна авторизации
+        self.window_login = WindowLogin()
+        self.window_login.show()
+        self.window_login.exec_()
 
     # Метод, который закрывает текущее окно в активном лайауте
     def close_window_action(self):
@@ -271,8 +294,96 @@ class WindowMenu(QDialog):
         button.setEnabled(False)
 
 
-# Класс окна терминала, в котором
-# будут транслироваться в реальном времени логи zabbix
+class WindowAccount(QDialog):
+    def __init__(self, zabbix):
+        super().__init__()
+
+        # Создаем словарь с данными для того, чтобы не делать кучу запросов
+        self.data = zabbix.user.checkAuthentication(sessionid=zabbix.auth)
+
+        self.setFixedSize(600, 700)
+        self.setStyleSheet(open('res/styles/window_account.css').read())
+
+        # Создаем все нужные лейблы
+        title = QLabel("Пользователь")
+        title.setObjectName("title")
+
+        icon = QLabel()
+        icon.setPixmap(QIcon("res/icon/user_account.svg").pixmap(150, 150))
+
+        name = QLabel(self.data.get('name'))
+        name.setObjectName("name")
+
+        surname = QLabel(self.data.get('surname'))
+        surname.setObjectName("name")
+
+        username_label = QLabel("Логин: ")
+        username_label.setObjectName("label")
+
+        lang_label = QLabel("Язык: ")
+        lang_label.setObjectName("label")
+
+        username = QLabel(self.data.get('username'))
+        lang = QLabel(self.data.get('lang'))
+
+        # Создаем главный лайаут
+        main_layout = QVBoxLayout(self)
+
+        # Создаем верхний и нижний лайауты
+        top_layout = QHBoxLayout()
+        bottom_layout = QHBoxLayout()
+        bottom_layout.setContentsMargins(0, 0, 0, 300)
+
+        # Создаем угловые лайауты
+        left_top_layout = QVBoxLayout()
+        left_top_layout.setAlignment(Qt.AlignRight | Qt.AlignBottom)
+
+        right_top_layout = QVBoxLayout()
+        right_top_layout.setAlignment(Qt.AlignLeft | Qt.AlignBottom)
+
+        left_bottom_layout = QVBoxLayout()
+        left_bottom_layout.setAlignment(Qt.AlignRight | Qt.AlignTop)
+
+        right_bottom_layout = QVBoxLayout()
+        right_bottom_layout.setAlignment(Qt.AlignLeft | Qt.AlignTop)
+
+        # Добавляем все лайауты
+        main_layout.addWidget(title)
+        main_layout.addLayout(top_layout)
+        main_layout.addLayout(bottom_layout)
+
+        top_layout.addLayout(left_top_layout)
+        top_layout.addLayout(right_top_layout)
+        bottom_layout.addLayout(left_bottom_layout)
+        bottom_layout.addLayout(right_bottom_layout)
+
+        # А потом и лейблы на них
+        left_top_layout.addWidget(icon)
+
+        right_top_layout.addWidget(name)
+        right_top_layout.addWidget(surname)
+
+        left_bottom_layout.addWidget(username_label)
+        left_bottom_layout.addWidget(lang_label)
+
+        right_bottom_layout.addWidget(username)
+        right_bottom_layout.addWidget(lang)
+
+        main_layout.setContentsMargins(0, 0, 0, 0)  # Отступы между краями главного лайаута
+
+
+class WindowSettings(QDialog):
+    def __init__(self, zabbix):
+        super().__init__()
+
+        # Инициализируем текущую сессию
+        self.zabbix = zabbix
+
+        self.setFixedSize(600, 700)
+        self.setStyleSheet(open('res/styles/window_settings.css').read())
+
+
+# Класс окна терминала, в котором будут транслироваться в реальном времени логи zabbix
 class WindowTerminal(QDialog):
     def __init__(self, zabbix):
         super().__init__()
