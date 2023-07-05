@@ -491,15 +491,24 @@ class WindowNodeWeb(QDialog):
         self.setFixedSize(600, 700)
         self.setStyleSheet(open('res/styles/window_node_web.css').read())
 
+        # Создаем экземпляры логики хостов, элементов данных и триггеров
         self.hosts = Hosts(zabbix)
         self.items = Items(zabbix)
         self.triggers = Triggers(zabbix)
+
+        # API zabbix в сессии
         self.zabbix = zabbix
+        # Текущий центральный лайаут, куда добавляются окна
         self.action_layout = action_layout
+        # Ссылка на текущее открытое окно в центральном лайауте
         self.cur_action_window = cur_action_window
 
+        # Основной лайаут - вертикальный
         root_VBox_layout = QVBoxLayout(self)
-        main_window_scroll_area = QScrollArea(self)
+        # В основной лайаут добавится зона с прокруткой
+        main_window_scroll_area = QScrollArea()
+        # И панель с кнопками
+        panel_of_buttons_widget = QWidget()
         # Отключаем горизонтальный скролл
         main_window_scroll_area.setHorizontalScrollBarPolicy(
             Qt.ScrollBarAlwaysOff
@@ -508,9 +517,12 @@ class WindowNodeWeb(QDialog):
         main_window_scroll_area.setWidgetResizable(
             True
         )
-        panel_of_buttons_widget = QWidget()
+
+        # Виджет, который вставится в scroll area
         main_window_scroll_widget = QWidget()
+        # Лайаут панели с кнопками вставится в ее виджет
         panel_of_buttons_layout = QHBoxLayout()
+        # Добавление кнопок в соответствующую панель
         add_host_button = QPushButton("Add")
         add_host_button.clicked.connect(
             lambda: self.add_host_button_clicked(
@@ -523,9 +535,12 @@ class WindowNodeWeb(QDialog):
                 main_window_hosts_layout
             )
         )
+        # Основной лайаут scroll area
         main_window_hosts_layout = QGridLayout()
 
         hosts = self.hosts.get_hosts()
+        # Для каждого хоста создается свой виджет и лайаут его
+        # надписей и кнопок
         for host in hosts:
             current_item_widget = QWidget()
             current_item_layout = QHBoxLayout()
@@ -541,6 +556,7 @@ class WindowNodeWeb(QDialog):
             current_item_key_label.setText(host['hostid'])
             current_item_layout.addWidget(current_item_key_label)
 
+            # Кнопка открытия окна элементов данных конкретного хоста
             current_host_items_button = QPushButton(
                 'items' + ' ' + str(len(self.items.get_items(host)))
             )
@@ -562,6 +578,7 @@ class WindowNodeWeb(QDialog):
                 self.items_button_clicked(host)
             )
 
+            # Кнопка открытия окна триггеров конкретного хоста
             current_host_triggers_button = QPushButton(
                 'triggers' + ' ' + str(len(self.triggers.get_triggers(host)))
             )
@@ -573,6 +590,7 @@ class WindowNodeWeb(QDialog):
             current_item_widget.setLayout(current_item_layout)
             main_window_hosts_layout.addWidget(current_item_widget)
 
+        # Вложение всех элементов так, как указано при их создании
         main_window_scroll_widget.setLayout(main_window_hosts_layout)
         panel_of_buttons_layout.addWidget(add_host_button)
         panel_of_buttons_layout.addWidget(delete_chosen_hosts_button)
@@ -586,6 +604,7 @@ class WindowNodeWeb(QDialog):
     #     self.action_layout.addWidget(window_items)
     #     WindowApp.close_window(self)
 
+    # Функция обработки события нажатия на элементы данных хоста
     # Как я понял, здесь мы возвращаем connect-y
     # упакованную функцию button_clicked и выглядит это примерно так:
     # button.clicked.connect(button_clicked)
@@ -600,6 +619,7 @@ class WindowNodeWeb(QDialog):
             WindowApp.close_window(self)
         return button_clicked
 
+    # Функция обработки события нажатия на триггеры хоста
     def triggers_button_clicked(self, host):
         def button_clicked():
             window_triggers = WindowTriggers(
@@ -609,11 +629,13 @@ class WindowNodeWeb(QDialog):
             WindowApp.close_window(self)
         return button_clicked
 
+    # Функция открытия окна добавления хоста по нажатию на кнопку
     def add_host_button_clicked(self, main_window_hosts_layout):
         window_add_host = WindowAddHost(self.zabbix, self.action_layout)
         self.action_layout.addWidget(window_add_host)
         WindowApp.close_window(self)
 
+    # Функция удаления хостов, которым установлена галочка в чекбоксе
     def delete_chosen_hosts_button_clicked(self, main_window_hosts_layout):
         hostids_to_delete = {}
         for i in range(main_window_hosts_layout.rowCount()):
@@ -625,6 +647,7 @@ class WindowNodeWeb(QDialog):
         # self.hosts.delete_hosts(hostids_to_delete)
 
 
+# Класс окна добавления нового хоста
 class WindowAddHost(QDialog):
     def __init__(self, zabbix, action_layout):
         super().__init__()
@@ -632,24 +655,36 @@ class WindowAddHost(QDialog):
         self.setStyleSheet(open('res/styles/window_add_host.css').read())
 
 
+# Класс окна элементов данных конкретного хоста
 class WindowItems(QDialog):
     def __init__(self, zabbix, action_layout, host):
         super().__init__()
+
         self.setFixedSize(600, 700)
         self.setStyleSheet(open('res/styles/window_items.css').read())
 
+        # Создаем экземпляр логики элементов данных
         self.items = Items(zabbix)
-        self.zabbix = zabbix
-        self.host = host
-        self.action_layout = action_layout
 
+        # API zabbix в сессии
+        self.zabbix = zabbix
+        # Хост, у которого просматриваются элементы данных
+        self.host = host
+        # Текущий центральный лайаут, куда добавляются окна
+        self.action_layout = action_layout
+        # Ссылка на текущее открытое окно в центральном лайауте
+        # self.cur_action_window = cur_action_window
+
+        # Основной лайаут - вертикальный
         root_VBox_layout = QVBoxLayout(self)
+        # Кнопка возврата к окну хостов в основном лайауте
         return_button = QPushButton()
         return_button.setIcon(QIcon("res/icon/arrow_back.svg"))
         return_button.setIconSize(QSize(50, 50))
+        # Привязка обработки события нажатия на нее
         return_button.clicked.connect(lambda: self.return_button_clicked())
-
-        main_window_scroll_area = QScrollArea(self)
+        # Основное окно со скроллом элементов данных
+        main_window_scroll_area = QScrollArea()
         # Отключаем горизонтальный скролл
         main_window_scroll_area.setHorizontalScrollBarPolicy(
             Qt.ScrollBarAlwaysOff
@@ -658,24 +693,28 @@ class WindowItems(QDialog):
         main_window_scroll_area.setWidgetResizable(
             True
         )
-
+        # Виджет панели с кнопками в основном лайауте
         panel_of_buttons_widget = QWidget()
-        main_window_scroll_widget = QWidget()
-        panel_of_buttons_layout = QHBoxLayout()
 
+        # Виджет скролл-окна
+        main_window_scroll_widget = QWidget()
+        # Лайаут панели с кнопками вставится в ее виджет
+        panel_of_buttons_layout = QHBoxLayout()
+        # Добавление соответствующих кнопок в лайаут панели
         add_item_button = QPushButton("Add")
         add_item_button.clicked.connect(
             lambda: self.add_item_button_clicked()
         )
-
         delete_chosen_items_button = QPushButton("Delete")
         delete_chosen_items_button.clicked.connect(
             lambda: self.delete_chosen_items_button_clicked()
         )
-
+        # Основной лайаут scroll area
         main_window_items_layout = QGridLayout()
 
         items = self.items.get_items(self.host)
+        # Для каждого элемента данных создается виджет и
+        # лайаут надписей с информацией
         for item in items:
             current_item_widget = QWidget()
             current_item_layout = QHBoxLayout()
@@ -698,6 +737,7 @@ class WindowItems(QDialog):
             current_item_widget.setLayout(current_item_layout)
             main_window_items_layout.addWidget(current_item_widget)
 
+        # Вложение элементов друг в друга так, как это было сказано ранее
         main_window_scroll_widget.setLayout(main_window_items_layout)
         panel_of_buttons_layout.addWidget(add_item_button)
         panel_of_buttons_layout.addWidget(delete_chosen_items_button)
@@ -707,61 +747,81 @@ class WindowItems(QDialog):
         root_VBox_layout.addWidget(main_window_scroll_area)
         root_VBox_layout.addWidget(panel_of_buttons_widget)
 
+    # Функция выполняет возврат обратно к окну хостов
     def return_button_clicked(self):
         window_hosts = WindowNodeWeb(self.zabbix, self.action_layout)
         self.action_layout.addWidget(window_hosts)
         WindowApp.close_window(self)
 
+    # Функция вызывает новое окно добавление нового элемента данных
     def add_item_button_clicked(self):
         pass
 
+    # Функция удаляет те элементы данных, для которых установлен
+    # чекбокс
     def delete_chosen_items_button_clicked(self):
         pass
 
 
+# Класс окна триггеров конкретного хоста
 class WindowTriggers(QDialog):
     def __init__(self, zabbix, action_layout, host):
         super().__init__()
         self.setFixedSize(600, 700)
         self.setStyleSheet(open('res/styles/window_triggers.css').read())
 
+        # Создаем экземпляр логики триггеров
         self.triggers = Triggers(zabbix)
+        # API zabbix в сессии
         self.zabbix = zabbix
+        # Текущий хост, к которому привязаны триггеры
         self.host = host
+        # Текущий центральный лайаут, куда добавляются окна
         self.action_layout = action_layout
+        # Ссылка на текущее открытое окно в центральном лайауте
+        # self.cur_action_window = cur_action_window
 
+        # Основной лайаут - вертикальный
         root_VBox_layout = QVBoxLayout(self)
+        # Кнопка возврата к окну хостов в основном лайауте
         return_button = QPushButton()
         return_button.setIcon(QIcon("res/icon/arrow_back.svg"))
         return_button.setIconSize(QSize(50, 50))
+        # Привязка обработки события нажатия на нее
         return_button.clicked.connect(lambda: self.return_button_clicked())
 
-        main_window_scroll_area = QScrollArea(self)
+        # В основной лайаут добавится зона с прокруткой
+        main_window_scroll_area = QScrollArea()
         # Отключаем горизонтальный скролл
         main_window_scroll_area.setHorizontalScrollBarPolicy(
             Qt.ScrollBarAlwaysOff
         )
         # Включаем динамическое масштабирование
-        main_window_scroll_area.setWidgetResizable(True)
-
+        main_window_scroll_area.setWidgetResizable(
+            True
+        )
+        # Виджет панели с кнопками в основном лайауте
         panel_of_buttons_widget = QWidget()
 
+        # Виджет скролл-окна
         main_window_scroll_widget = QWidget()
+        # Лайаут панели с кнопками вставится в ее виджет
         panel_of_buttons_layout = QHBoxLayout()
-
+        # Добавление соответствующих кнопок в лайаут панели
         add_trigger_button = QPushButton("Add")
         add_trigger_button.clicked.connect(
             lambda: self.add_trigger_button_clicked()
         )
-
         delete_chosen_triggers_button = QPushButton("Delete")
         delete_chosen_triggers_button.clicked.connect(
             lambda: self.delete_chosen_triggers_button_clicked()
         )
-
+        # Основной лайаут scroll area
         main_window_triggers_layout = QGridLayout()
 
         triggers = self.triggers.get_triggers(self.host)
+        # Для каждого элемента данных создается виджет и
+        # лайаут надписей с информацией
         for trigger in triggers:
             current_trigger_widget = QWidget()
             current_trigger_layout = QHBoxLayout()
@@ -784,6 +844,7 @@ class WindowTriggers(QDialog):
             current_trigger_widget.setLayout(current_trigger_layout)
             main_window_triggers_layout.addWidget(current_trigger_widget)
 
+        # Вложение элементов друг в друга так, как это было сказано ранее
         main_window_scroll_widget.setLayout(main_window_triggers_layout)
         panel_of_buttons_layout.addWidget(add_trigger_button)
         panel_of_buttons_layout.addWidget(delete_chosen_triggers_button)
@@ -793,14 +854,18 @@ class WindowTriggers(QDialog):
         root_VBox_layout.addWidget(main_window_scroll_area)
         root_VBox_layout.addWidget(panel_of_buttons_widget)
 
+    # Функция выполняет возврат обратно к окну хостов
     def return_button_clicked(self):
         window_hosts = WindowNodeWeb(self.zabbix, self.action_layout)
         self.action_layout.addWidget(window_hosts)
         WindowApp.close_window(self)
 
+    # Функция вызывает новое окно добавление нового триггера
     def add_trigger_button_clicked(self):
         pass
 
+    # Функция удаляет те триггеры, для которых установлен
+    # чекбокс
     def delete_chosen_triggers_button_clicked(self):
         pass
 
@@ -809,6 +874,7 @@ class WindowTriggers(QDialog):
 class WindowUsers(QDialog):
     def __init__(self, zabbix, action_layout):
         super().__init__()
+
         self.setFixedSize(600, 700)
         self.setStyleSheet(open('res/styles/window_users.css').read())
 
