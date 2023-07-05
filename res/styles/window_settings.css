@@ -2,6 +2,20 @@ QDialog {
     background-color: #ac000000;
 }
 
+QMessageBox {
+    background-color: #f0f0f0;
+}
+
+QPushButton {
+    background-color: #9010ee;
+    color: #FFFFFF;
+    border: none;
+    padding: 10px 16px;
+    border-radius: 5px;
+    font-weight: bold;
+    font-size: 17px;
+}
+
 QLineEdit {
     background-color: #F0F0F0;
     border: 1px solid #CCCCCC;
@@ -24,7 +38,7 @@ QLabel#label {
     margin-left: 100px;
 }
 
-QPushButton {
+QPushButton#change {
     background-color: #9010ee;
     color: #FFFFFF;
     border: none;
@@ -36,10 +50,10 @@ QPushButton {
     margin-bottom: 20px;
 }
 
-QPushButton:hover {
+QPushButton#change:hover {
     background-color: #7010dd;
 }
 
-QPushButton:pressed {
+QPushButton#change:pressed {
     background-color: #501099;
 }

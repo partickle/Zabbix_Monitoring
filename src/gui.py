@@ -65,7 +65,7 @@ class WindowLogin(QDialog):
         label_password = QLabel("Пароль:")
         layout_input.addWidget(label_password)
 
-        self.input_password = QLineEdit("mamamian")
+        self.input_password = QLineEdit("123456za")
         self.input_password.setEchoMode(QLineEdit.Password)
         layout_input.addWidget(self.input_password)
 
@@ -415,6 +415,7 @@ class WindowSettings(QDialog):
         self.repeat_new_password.setPlaceholderText("Новый пароль (подтверждение)")
 
         button_password = QPushButton("Сменить")
+        button_password.setObjectName("change")
         button_password.clicked.connect(self.click_button_password)
 
         label_new_login = QLabel("Сменить логин: ")
@@ -427,6 +428,7 @@ class WindowSettings(QDialog):
         self.new_login.setPlaceholderText("Новый логин")
 
         button_login = QPushButton("Сменить")
+        button_login.setObjectName("change")
         button_login.clicked.connect(self.click_button_login)
 
         left_bottom_layout.addWidget(label_new_password)
@@ -446,12 +448,12 @@ class WindowSettings(QDialog):
     def click_button_password(self):
         QMessageBox.information(
             self, "Смена пароля", self.settings_logic.change_password(
-                self.old_password, self.new_password, self.repeat_new_password))
+                self.old_password.text(), self.new_password.text(), self.repeat_new_password.text()))
 
     def click_button_login(self):
         QMessageBox.information(
             self, "Смена логина", self.settings_logic.change_login(
-                self.new_login, self.password))
+                self.new_login.text(), self.password.text()))
 
 
 # Класс окна терминала, в котором будут транслироваться в реальном времени логи zabbix

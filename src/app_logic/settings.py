@@ -17,25 +17,32 @@ class Settings:
             'current_passwd': old_password
         }
 
+        if old_password == "" or new_password == "" or repeat_new_password == "":
+            return "Не оставляйте пустых строк"
+
         try:
-            if old_password == "" or new_password == "" or repeat_new_password == "":
-                return "Не оставляйте пустых строк"
 
             check_password = ZabbixAPI(self.zabbix.url)
             check_password.login(user=self.user_data.get('username'), password=old_password)
             check_password.user.logout()
 
-            if len(new_password) < 8:
-                return "Пароль должен быть больше 8 символов"
-            elif len(re.findall(r'a-zA-Z', new_password)) > 2:
-                return "Пароль должен содержать хотя бы две буквы"
-            elif new_password == repeat_new_password:
-                return "Пароли не совпадают"
-
-            self.zabbix.user.update(change_data)
-
         except ZabbixAPIException:
             return "Вы ввели неверный текущий пароль. Повторите попытку"
+
+        if len(new_password) < 8:
+            return "Пароль должен быть больше 8 символов"
+        elif len(re.findall(r'a-zA-Z', new_password)) > 2:
+            return "Пароль должен содержать хотя бы две буквы"
+        elif new_password != repeat_new_password:
+            return "Пароли не совпадают"
+
+        try:
+            self.zabbix.user.update(change_data)
+            self.zabbix.login(user=self.user_data.get('username'), password=new_password)
+            return "Вы успешно сменили пароль!"
+
+        except ZabbixAPIException as e:
+            return f'{e}'
 
     def change_login(self, new_login, password):
         change_data = {
@@ -44,15 +51,20 @@ class Settings:
             'username': new_login
         }
 
-        try:
-            if password == "" or new_login == "":
-                return "Не оставляйте пустых строк"
+        if password == "" or new_login == "":
+            return "Не оставляйте пустых строк"
 
+        try:
             check_password = ZabbixAPI(self.zabbix.url)
             check_password.login(user=self.user_data.get('username'), password=password)
             check_password.user.logout()
 
-            self.zabbix.user.update(change_data)
-
         except ZabbixAPIException:
             return "Вы ввели неверный пароль. Повторите попытку"
+
+        try:
+            self.zabbix.user.update(change_data)
+            return "Вы успешно сменили логин!"
+
+        except ZabbixAPIException as e:
+            return f'{e}'
