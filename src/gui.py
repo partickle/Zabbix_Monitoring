@@ -293,10 +293,16 @@ class WindowMenu(QDialog):
         if name_window == "window_node_web":
             self.close_window_action()
             window_node_web = WindowNodeWeb(
-                self.zabbix, self.action_layout, self.cur_action_window
+                self.zabbix, self.action_layout, self
             )
             self.action_layout.addWidget(window_node_web)
             self.cur_action_window = window_node_web
+            # Эта строчка нужна, так как при передаче cur_action_window
+            # в WindowNodeWeb через конструктор оно еще None и после
+            # присваивания cur_action_window ссылки, это же поле в другом
+            # классе остается все еще None
+            # Тут мы передаем экземпляру ссылку на самого себя
+            # В дальнейшем мы так будем делать всегда
         elif name_window == "window_users":
             self.close_window_action()
             window_users = WindowUsers(self.zabbix, self.action_layout)
@@ -485,7 +491,7 @@ class WindowTerminal(QDialog):
 
 # Класс активного окна узлов сети
 class WindowNodeWeb(QDialog):
-    def __init__(self, zabbix, action_layout, cur_action_window):
+    def __init__(self, zabbix, action_layout, window_menu):
         super().__init__()
 
         self.setFixedSize(600, 700)
@@ -496,7 +502,7 @@ class WindowNodeWeb(QDialog):
         self.items = Items(zabbix)
         self.triggers = Triggers(zabbix)
 
-        # tmp code
+        # tmp code Показывает группы и их id
         self.hostgroups = zabbix.hostgroup.get(output=['groupid', 'name'])
         for group in self.hostgroups:
             print(group['groupid'], group['name'])
@@ -506,7 +512,7 @@ class WindowNodeWeb(QDialog):
         # Текущий центральный лайаут, куда добавляются окна
         self.action_layout = action_layout
         # Ссылка на текущее открытое окно в центральном лайауте
-        self.cur_action_window = cur_action_window
+        self.window_menu = window_menu
 
         # Основной лайаут - вертикальный
         root_VBox_layout = QVBoxLayout(self)
@@ -534,12 +540,10 @@ class WindowNodeWeb(QDialog):
         )
         delete_chosen_hosts_button = QPushButton("Delete")
         delete_chosen_hosts_button.clicked.connect(
-            lambda: self.delete_chosen_hosts_button_clicked(
-                main_window_hosts_layout
-            )
+            lambda: self.delete_chosen_hosts_button_clicked()
         )
         # Основной лайаут scroll area
-        main_window_hosts_layout = QGridLayout()
+        self.main_window_hosts_layout = QGridLayout()
 
         hosts = self.hosts.get_hosts()
         # Для каждого хоста создается свой виджет и лайаут его
@@ -591,10 +595,10 @@ class WindowNodeWeb(QDialog):
             )
 
             current_item_widget.setLayout(current_item_layout)
-            main_window_hosts_layout.addWidget(current_item_widget)
+            self.main_window_hosts_layout.addWidget(current_item_widget)
 
         # Вложение всех элементов так, как указано при их создании
-        main_window_scroll_widget.setLayout(main_window_hosts_layout)
+        main_window_scroll_widget.setLayout(self.main_window_hosts_layout)
         panel_of_buttons_layout.addWidget(add_host_button)
         panel_of_buttons_layout.addWidget(delete_chosen_hosts_button)
         main_window_scroll_area.setWidget(main_window_scroll_widget)
@@ -616,8 +620,9 @@ class WindowNodeWeb(QDialog):
     def items_button_clicked(self, host):
         def button_clicked():
             window_items = WindowItems(
-                self.zabbix, self.action_layout, host
+                self.zabbix, self.action_layout, self.window_menu, host
             )
+            self.window_menu.cur_action_window = window_items
             self.action_layout.addWidget(window_items)
             WindowApp.close_window(self)
         return button_clicked
@@ -626,25 +631,31 @@ class WindowNodeWeb(QDialog):
     def triggers_button_clicked(self, host):
         def button_clicked():
             window_triggers = WindowTriggers(
-                self.zabbix, self.action_layout, host
+                self.zabbix, self.action_layout, self.window_menu, host
             )
+            self.window_menu.cur_action_window = window_triggers
             self.action_layout.addWidget(window_triggers)
             WindowApp.close_window(self)
         return button_clicked
 
     # Функция открытия окна добавления хоста по нажатию на кнопку
     def add_host_button_clicked(self):
-        window_add_host = WindowAddHost(self.zabbix, self.action_layout)
+        window_add_host = WindowAddHost(
+            self.zabbix, self.action_layout, self.window_menu
+        )
+        self.window_menu.cur_action_window = window_add_host
         self.action_layout.addWidget(window_add_host)
         WindowApp.close_window(self)
 
     # Функция удаления хостов, которым установлена галочка в чекбоксе
-    def delete_chosen_hosts_button_clicked(self, main_window_hosts_layout):
+    def delete_chosen_hosts_button_clicked(self):
         hostids_maybe_checked = {}
-        for i in range(main_window_hosts_layout.rowCount()):
-            value = main_window_hosts_layout.itemAtPosition(i, 0).widget() \
+        for i in range(self.main_window_hosts_layout.rowCount()):
+            value = self.main_window_hosts_layout \
+                .itemAtPosition(i, 0).widget() \
                 .layout().itemAt(0).widget().isChecked()
-            key = main_window_hosts_layout.itemAtPosition(i, 0).widget() \
+            key = self.main_window_hosts_layout \
+                .itemAtPosition(i, 0).widget() \
                 .layout().itemAt(2).widget().text()
             hostids_maybe_checked[key] = value
         self.hosts.delete_hosts(hostids_maybe_checked)
@@ -653,7 +664,7 @@ class WindowNodeWeb(QDialog):
 
 # Класс окна добавления нового хоста
 class WindowAddHost(QDialog):
-    def __init__(self, zabbix, action_layout):
+    def __init__(self, zabbix, action_layout, window_menu):
         super().__init__()
 
         self.setFixedSize(600, 700)
@@ -667,7 +678,7 @@ class WindowAddHost(QDialog):
         # Текущий центральный лайаут, куда добавляются окна
         self.action_layout = action_layout
         # Ссылка на текущее открытое окно в центральном лайауте
-        # self.cur_action_window = cur_action_window
+        self.window_menu = window_menu
 
         # Основной лайаут - вертикальный
         root_VBox_layout = QVBoxLayout(self)
@@ -696,22 +707,24 @@ class WindowAddHost(QDialog):
 
     # Функция выполняет возврат обратно к окну хостов
     def return_button_clicked(self):
-        window_hosts = WindowNodeWeb(self.zabbix, self.action_layout, None)
+        window_hosts = WindowNodeWeb(
+            self.zabbix, self.action_layout, self.window_menu
+        )
+        self.window_menu.cur_action_window = window_hosts
         self.action_layout.addWidget(window_hosts)
         WindowApp.close_window(self)
 
+    # Добавление хоста и возврат к окну хостов
     def host_create_button_clicked(self):
         self.hosts.add_host(
             self.host_name_field.text(), self.host_ip_field.text()
         )
-        window_hosts = WindowNodeWeb(self.zabbix, self.action_layout, None)
-        self.action_layout.addWidget(window_hosts)
-        WindowApp.close_window(self)
+        self.return_button_clicked()
 
 
 # Класс окна элементов данных конкретного хоста
 class WindowItems(QDialog):
-    def __init__(self, zabbix, action_layout, host):
+    def __init__(self, zabbix, action_layout, window_menu, host):
         super().__init__()
 
         self.setFixedSize(600, 700)
@@ -727,7 +740,7 @@ class WindowItems(QDialog):
         # Текущий центральный лайаут, куда добавляются окна
         self.action_layout = action_layout
         # Ссылка на текущее открытое окно в центральном лайауте
-        # self.cur_action_window = cur_action_window
+        self.window_menu = window_menu
 
         # Основной лайаут - вертикальный
         root_VBox_layout = QVBoxLayout(self)
@@ -803,7 +816,10 @@ class WindowItems(QDialog):
 
     # Функция выполняет возврат обратно к окну хостов
     def return_button_clicked(self):
-        window_hosts = WindowNodeWeb(self.zabbix, self.action_layout, None)
+        window_hosts = WindowNodeWeb(
+            self.zabbix, self.action_layout
+        )
+        self.window_menu.cur_action_window = window_hosts
         self.action_layout.addWidget(window_hosts)
         WindowApp.close_window(self)
 
@@ -819,7 +835,7 @@ class WindowItems(QDialog):
 
 # Класс окна триггеров конкретного хоста
 class WindowTriggers(QDialog):
-    def __init__(self, zabbix, action_layout, host):
+    def __init__(self, zabbix, action_layout, window_menu, host):
         super().__init__()
         self.setFixedSize(600, 700)
         self.setStyleSheet(open('res/styles/window_triggers.css').read())
@@ -833,7 +849,7 @@ class WindowTriggers(QDialog):
         # Текущий центральный лайаут, куда добавляются окна
         self.action_layout = action_layout
         # Ссылка на текущее открытое окно в центральном лайауте
-        # self.cur_action_window = cur_action_window
+        self.window_menu = window_menu
 
         # Основной лайаут - вертикальный
         root_VBox_layout = QVBoxLayout(self)
@@ -910,7 +926,10 @@ class WindowTriggers(QDialog):
 
     # Функция выполняет возврат обратно к окну хостов
     def return_button_clicked(self):
-        window_hosts = WindowNodeWeb(self.zabbix, self.action_layout, None)
+        window_hosts = WindowNodeWeb(
+            self.zabbix, self.action_layout
+        )
+        self.window_menu.cur_action_window = window_hosts
         self.action_layout.addWidget(window_hosts)
         WindowApp.close_window(self)
 
