@@ -169,7 +169,7 @@ class WindowMenu(QDialog):
 
         # Создаем пустую переменную окна авторизации
         self.window_login = None
-        
+
         # Текущее открытое окно во активном лайауте
         self.cur_action_window = None
 
@@ -197,14 +197,34 @@ class WindowMenu(QDialog):
         # Создаем кнопки и добавляем их в массив
         button_node_web = QPushButton("Узлы сети")
         self.buttons_menu.append(button_node_web)
+
         # Для каждой кнопки подключаем сигнал clicked к слоту button_clicked
-        button_node_web.clicked.connect(lambda: self.button_clicked(button_node_web))
-        button_node_web.clicked.connect(lambda: self.open_window_action("window_node_web"))
+        button_node_web.clicked.connect(
+            lambda: self.button_clicked(
+                button_node_web
+            )
+        )
+
+        button_node_web.clicked.connect(
+            lambda: self.open_window_action(
+                "window_node_web"
+            )
+        )
 
         button_users = QPushButton("Пользователи")
         self.buttons_menu.append(button_users)
-        button_users.clicked.connect(lambda: self.button_clicked(button_users))
-        button_users.clicked.connect(lambda: self.open_window_action("window_users"))
+
+        button_users.clicked.connect(
+            lambda: self.button_clicked(
+                button_users
+            )
+        )
+
+        button_users.clicked.connect(
+            lambda: self.open_window_action(
+                "window_users"
+            )
+        )
 
         menu_layout.addWidget(button_node_web)
         menu_layout.addWidget(button_users)
@@ -215,11 +235,22 @@ class WindowMenu(QDialog):
         # Создаем кнопки
         button_account = QPushButton()
         self.buttons_menu.append(button_account)
-        button_account.setObjectName("quick_buttons")  # Присваиваем отдельный класс для стилизации
-        button_account.setIcon(QIcon("res/icon/user.svg"))  # Добавляем в кнопку иконку в svg-формате для качества
-        button_account.setIconSize(QSize(48, 48))  # Задаем размер
-        button_account.clicked.connect(lambda: self.button_clicked(button_account))
-        button_account.clicked.connect(lambda: self.open_window_action("window_account"))
+        # Присваиваем отдельный класс для стилизации
+        button_account.setObjectName("quick_buttons")
+        # Добавляем в кнопку иконку в svg-формате для качества
+        button_account.setIcon(QIcon("res/icon/user.svg"))
+        # Задаем размер
+        button_account.setIconSize(QSize(48, 48))
+        button_account.clicked.connect(
+            lambda: self.button_clicked(
+                button_account
+            )
+        )
+        button_account.clicked.connect(
+            lambda: self.open_window_action(
+                "window_account"
+            )
+        )
         quick_layout.addWidget(button_account)
 
         button_settings = QPushButton()
@@ -227,8 +258,16 @@ class WindowMenu(QDialog):
         button_settings.setObjectName("quick_buttons")
         button_settings.setIcon(QIcon("res/icon/settings.svg"))
         button_settings.setIconSize(QSize(48, 48))
-        button_settings.clicked.connect(lambda: self.button_clicked(button_settings))
-        button_settings.clicked.connect(lambda: self.open_window_action("window_settings"))
+        button_settings.clicked.connect(
+            lambda: self.button_clicked(
+                button_settings
+            )
+        )
+        button_settings.clicked.connect(
+            lambda: self.open_window_action(
+                "window_settings"
+            )
+        )
         quick_layout.addWidget(button_settings)
 
         button_logout = QPushButton()
@@ -236,7 +275,11 @@ class WindowMenu(QDialog):
         button_logout.setObjectName("quick_buttons")
         button_logout.setIcon(QIcon('res/icon/logout.svg'))
         button_logout.setIconSize(QSize(48, 48))
-        button_logout.clicked.connect(lambda: self.button_clicked(button_logout))
+        button_logout.clicked.connect(
+            lambda: self.button_clicked(
+                button_logout
+            )
+        )
         button_logout.clicked.connect(self.button_logout)
         quick_layout.addWidget(button_logout)
 
@@ -249,7 +292,9 @@ class WindowMenu(QDialog):
     def open_window_action(self, name_window):
         if name_window == "window_node_web":
             self.close_window_action()
-            window_node_web = WindowNodeWeb(self.zabbix, self.action_layout, self.cur_action_window)
+            window_node_web = WindowNodeWeb(
+                self.zabbix, self.action_layout, self.cur_action_window
+            )
             self.action_layout.addWidget(window_node_web)
             self.cur_action_window = window_node_web
         elif name_window == "window_users":
@@ -472,9 +517,9 @@ class WindowNodeWeb(QDialog):
                 main_window_hosts_layout
             )
         )
-        delete_choosen_hosts_button = QPushButton("Delete")
-        delete_choosen_hosts_button.clicked.connect(
-            lambda: self.delete_choosen_hosts_button_clicked(
+        delete_chosen_hosts_button = QPushButton("Delete")
+        delete_chosen_hosts_button.clicked.connect(
+            lambda: self.delete_chosen_hosts_button_clicked(
                 main_window_hosts_layout
             )
         )
@@ -501,7 +546,7 @@ class WindowNodeWeb(QDialog):
             )
             current_item_layout.addWidget(current_host_items_button)
 
-            # Очень странно, что код снизу(тоже закоменченная) уже работает,
+            # Очень странно, что код снизу(тоже закоменченный) уже работает,
             # а этот код - нет
             # current_host_items_button.clicked.connect(
             #     lambda: self.items_button_clicked(host)
@@ -512,7 +557,7 @@ class WindowNodeWeb(QDialog):
             #     lambda state, x=host: self.items_button_clicked(x)
             # )
 
-            # Рабочий вариант для текущего варианта вызываемой фукнции
+            # Рабочий вариант для текущего варианта вызываемой функции
             current_host_items_button.clicked.connect(
                 self.items_button_clicked(host)
             )
@@ -530,7 +575,7 @@ class WindowNodeWeb(QDialog):
 
         main_window_scroll_widget.setLayout(main_window_hosts_layout)
         panel_of_buttons_layout.addWidget(add_host_button)
-        panel_of_buttons_layout.addWidget(delete_choosen_hosts_button)
+        panel_of_buttons_layout.addWidget(delete_chosen_hosts_button)
         main_window_scroll_area.setWidget(main_window_scroll_widget)
         panel_of_buttons_widget.setLayout(panel_of_buttons_layout)
         root_VBox_layout.addWidget(main_window_scroll_area)
@@ -569,7 +614,7 @@ class WindowNodeWeb(QDialog):
         self.action_layout.addWidget(window_add_host)
         WindowApp.close_window(self)
 
-    def delete_choosen_hosts_button_clicked(self, main_window_hosts_layout):
+    def delete_chosen_hosts_button_clicked(self, main_window_hosts_layout):
         hostids_to_delete = {}
         for i in range(main_window_hosts_layout.rowCount()):
             value = main_window_hosts_layout.itemAtPosition(i, 0).widget() \
@@ -623,9 +668,9 @@ class WindowItems(QDialog):
             lambda: self.add_item_button_clicked()
         )
 
-        delete_choosen_items_button = QPushButton("Delete")
-        delete_choosen_items_button.clicked.connect(
-            lambda: self.delete_choosen_items_button_clicked()
+        delete_chosen_items_button = QPushButton("Delete")
+        delete_chosen_items_button.clicked.connect(
+            lambda: self.delete_chosen_items_button_clicked()
         )
 
         main_window_items_layout = QGridLayout()
@@ -655,7 +700,7 @@ class WindowItems(QDialog):
 
         main_window_scroll_widget.setLayout(main_window_items_layout)
         panel_of_buttons_layout.addWidget(add_item_button)
-        panel_of_buttons_layout.addWidget(delete_choosen_items_button)
+        panel_of_buttons_layout.addWidget(delete_chosen_items_button)
         main_window_scroll_area.setWidget(main_window_scroll_widget)
         panel_of_buttons_widget.setLayout(panel_of_buttons_layout)
         root_VBox_layout.addWidget(return_button)
@@ -670,7 +715,7 @@ class WindowItems(QDialog):
     def add_item_button_clicked(self):
         pass
 
-    def delete_choosen_items_button_clicked(self):
+    def delete_chosen_items_button_clicked(self):
         pass
 
 
@@ -709,9 +754,9 @@ class WindowTriggers(QDialog):
             lambda: self.add_trigger_button_clicked()
         )
 
-        delete_choosen_triggers_button = QPushButton("Delete")
-        delete_choosen_triggers_button.clicked.connect(
-            lambda: self.delete_choosen_triggers_button_clicked()
+        delete_chosen_triggers_button = QPushButton("Delete")
+        delete_chosen_triggers_button.clicked.connect(
+            lambda: self.delete_chosen_triggers_button_clicked()
         )
 
         main_window_triggers_layout = QGridLayout()
@@ -741,7 +786,7 @@ class WindowTriggers(QDialog):
 
         main_window_scroll_widget.setLayout(main_window_triggers_layout)
         panel_of_buttons_layout.addWidget(add_trigger_button)
-        panel_of_buttons_layout.addWidget(delete_choosen_triggers_button)
+        panel_of_buttons_layout.addWidget(delete_chosen_triggers_button)
         main_window_scroll_area.setWidget(main_window_scroll_widget)
         panel_of_buttons_widget.setLayout(panel_of_buttons_layout)
         root_VBox_layout.addWidget(return_button)
@@ -756,7 +801,7 @@ class WindowTriggers(QDialog):
     def add_trigger_button_clicked(self):
         pass
 
-    def delete_choosen_triggers_button_clicked(self):
+    def delete_chosen_triggers_button_clicked(self):
         pass
 
 
