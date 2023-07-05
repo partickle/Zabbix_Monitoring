@@ -247,22 +247,22 @@ class WindowMenu(QDialog):
     # Метод, который открывает новое окно в активном лайауте.
     # Не теряет состояние текущего окна, если нажать еще раз на кнопку
     def open_window_action(self, name_window):
-        if name_window == "window_node_web" and not isinstance(self.cur_action_window, WindowNodeWeb):
+        if name_window == "window_node_web":
             self.close_window_action()
-            window_node_web = WindowNodeWeb(self.zabbix, self.action_layout)
+            window_node_web = WindowNodeWeb(self.zabbix, self.action_layout, self.cur_action_window)
             self.action_layout.addWidget(window_node_web)
             self.cur_action_window = window_node_web
-        elif name_window == "window_users" and not isinstance(self.cur_action_window, WindowUsers):
+        elif name_window == "window_users":
             self.close_window_action()
             window_users = WindowUsers(self.zabbix, self.action_layout)
             self.action_layout.addWidget(window_users)
             self.cur_action_window = window_users
-        elif name_window == "window_account" and not isinstance(self.cur_action_window, WindowAccount):
+        elif name_window == "window_account":
             self.close_window_action()
             window_account = WindowAccount(self.zabbix)
             self.action_layout.addWidget(window_account)
             self.cur_action_window = window_account
-        elif name_window == "window_settings" and not isinstance(self.cur_action_window, WindowSettings):
+        elif name_window == "window_settings":
             self.close_window_action()
             window_settings = WindowSettings(self.zabbix)
             self.action_layout.addWidget(window_settings)
@@ -368,8 +368,8 @@ class WindowAccount(QDialog):
 
         right_bottom_layout.addWidget(username)
         right_bottom_layout.addWidget(lang)
-
-        main_layout.setContentsMargins(0, 0, 0, 0)  # Отступы между краями главного лайаута
+        # Отступы между краями главного лайаута
+        main_layout.setContentsMargins(0, 0, 0, 0)
 
 
 class WindowSettings(QDialog):
@@ -383,7 +383,8 @@ class WindowSettings(QDialog):
         self.setStyleSheet(open('res/styles/window_settings.css').read())
 
 
-# Класс окна терминала, в котором будут транслироваться в реальном времени логи zabbix
+# Класс окна терминала, в котором
+# будут транслироваться в реальном времени логи zabbix
 class WindowTerminal(QDialog):
     def __init__(self, zabbix):
         super().__init__()
@@ -439,15 +440,18 @@ class WindowTerminal(QDialog):
 
 # Класс активного окна узлов сети
 class WindowNodeWeb(QDialog):
-    def __init__(self, zabbix, action_layout):
+    def __init__(self, zabbix, action_layout, cur_action_window):
         super().__init__()
 
         self.setFixedSize(600, 700)
         self.setStyleSheet(open('res/styles/window_node_web.css').read())
 
         self.hosts = Hosts(zabbix)
+        self.items = Items(zabbix)
+        self.triggers = Triggers(zabbix)
         self.zabbix = zabbix
         self.action_layout = action_layout
+        self.cur_action_window = cur_action_window
 
         root_VBox_layout = QVBoxLayout(self)
         main_window_scroll_area = QScrollArea(self)
@@ -493,7 +497,7 @@ class WindowNodeWeb(QDialog):
             current_item_layout.addWidget(current_item_key_label)
 
             current_host_items_button = QPushButton(
-                'items' + ' ' + str(len(self.hosts.get_items(host)))
+                'items' + ' ' + str(len(self.items.get_items(host)))
             )
             current_item_layout.addWidget(current_host_items_button)
 
@@ -514,7 +518,7 @@ class WindowNodeWeb(QDialog):
             )
 
             current_host_triggers_button = QPushButton(
-                'triggers' + ' ' + str(len(self.hosts.get_triggers(host)))
+                'triggers' + ' ' + str(len(self.triggers.get_triggers(host)))
             )
             current_item_layout.addWidget(current_host_triggers_button)
             current_host_triggers_button.clicked.connect(
