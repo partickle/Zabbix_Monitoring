@@ -496,6 +496,11 @@ class WindowNodeWeb(QDialog):
         self.items = Items(zabbix)
         self.triggers = Triggers(zabbix)
 
+        # tmp code
+        self.hostgroups = zabbix.hostgroup.get(output=['groupid', 'name'])
+        for group in self.hostgroups:
+            print(group['groupid'], group['name'])
+
         # API zabbix в сессии
         self.zabbix = zabbix
         # Текущий центральный лайаут, куда добавляются окна
@@ -525,9 +530,7 @@ class WindowNodeWeb(QDialog):
         # Добавление кнопок в соответствующую панель
         add_host_button = QPushButton("Add")
         add_host_button.clicked.connect(
-            lambda: self.add_host_button_clicked(
-                main_window_hosts_layout
-            )
+            lambda: self.add_host_button_clicked()
         )
         delete_chosen_hosts_button = QPushButton("Delete")
         delete_chosen_hosts_button.clicked.connect(
@@ -630,29 +633,80 @@ class WindowNodeWeb(QDialog):
         return button_clicked
 
     # Функция открытия окна добавления хоста по нажатию на кнопку
-    def add_host_button_clicked(self, main_window_hosts_layout):
+    def add_host_button_clicked(self):
         window_add_host = WindowAddHost(self.zabbix, self.action_layout)
         self.action_layout.addWidget(window_add_host)
         WindowApp.close_window(self)
 
     # Функция удаления хостов, которым установлена галочка в чекбоксе
     def delete_chosen_hosts_button_clicked(self, main_window_hosts_layout):
-        hostids_to_delete = {}
+        hostids_maybe_checked = {}
         for i in range(main_window_hosts_layout.rowCount()):
             value = main_window_hosts_layout.itemAtPosition(i, 0).widget() \
                 .layout().itemAt(0).widget().isChecked()
             key = main_window_hosts_layout.itemAtPosition(i, 0).widget() \
                 .layout().itemAt(2).widget().text()
-            hostids_to_delete[key] = value
-        # self.hosts.delete_hosts(hostids_to_delete)
+            hostids_maybe_checked[key] = value
+        self.hosts.delete_hosts(hostids_maybe_checked)
+        # TODO: update window
 
 
 # Класс окна добавления нового хоста
 class WindowAddHost(QDialog):
     def __init__(self, zabbix, action_layout):
         super().__init__()
+
         self.setFixedSize(600, 700)
         self.setStyleSheet(open('res/styles/window_add_host.css').read())
+
+        # Создает экземпляр логики хостов
+        self.hosts = Hosts(zabbix)
+
+        # API zabbix в сессии
+        self.zabbix = zabbix
+        # Текущий центральный лайаут, куда добавляются окна
+        self.action_layout = action_layout
+        # Ссылка на текущее открытое окно в центральном лайауте
+        # self.cur_action_window = cur_action_window
+
+        # Основной лайаут - вертикальный
+        root_VBox_layout = QVBoxLayout(self)
+        # Кнопка возврата к окну хостов в основном лайауте
+        return_button = QPushButton()
+        return_button.setIcon(QIcon("res/icon/arrow_back.svg"))
+        return_button.setIconSize(QSize(50, 50))
+        # Привязка обработки события нажатия на нее
+        return_button.clicked.connect(
+            lambda: self.return_button_clicked()
+        )
+        # Поля для заполнения
+        self.host_name_field = QLineEdit()
+        self.host_name_field.setPlaceholderText
+        self.host_ip_field = QLineEdit()
+        # Кнопка добавления
+        host_create_button = QPushButton("Добавить")
+        host_create_button.clicked.connect(
+            lambda: self.host_create_button_clicked()
+        )
+
+        root_VBox_layout.addWidget(return_button)
+        root_VBox_layout.addWidget(self.host_name_field)
+        root_VBox_layout.addWidget(self.host_ip_field)
+        root_VBox_layout.addWidget(host_create_button)
+
+    # Функция выполняет возврат обратно к окну хостов
+    def return_button_clicked(self):
+        window_hosts = WindowNodeWeb(self.zabbix, self.action_layout, None)
+        self.action_layout.addWidget(window_hosts)
+        WindowApp.close_window(self)
+
+    def host_create_button_clicked(self):
+        self.hosts.add_host(
+            self.host_name_field.text(), self.host_ip_field.text()
+        )
+        window_hosts = WindowNodeWeb(self.zabbix, self.action_layout, None)
+        self.action_layout.addWidget(window_hosts)
+        WindowApp.close_window(self)
 
 
 # Класс окна элементов данных конкретного хоста
@@ -749,7 +803,7 @@ class WindowItems(QDialog):
 
     # Функция выполняет возврат обратно к окну хостов
     def return_button_clicked(self):
-        window_hosts = WindowNodeWeb(self.zabbix, self.action_layout)
+        window_hosts = WindowNodeWeb(self.zabbix, self.action_layout, None)
         self.action_layout.addWidget(window_hosts)
         WindowApp.close_window(self)
 
@@ -856,7 +910,7 @@ class WindowTriggers(QDialog):
 
     # Функция выполняет возврат обратно к окну хостов
     def return_button_clicked(self):
-        window_hosts = WindowNodeWeb(self.zabbix, self.action_layout)
+        window_hosts = WindowNodeWeb(self.zabbix, self.action_layout, None)
         self.action_layout.addWidget(window_hosts)
         WindowApp.close_window(self)
 
