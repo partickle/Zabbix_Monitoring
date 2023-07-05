@@ -150,10 +150,25 @@ class WindowApp(QDialog):
         self.right_widget.timer_flag = False
         event.accept()
 
+    # Метод безопасно закрывает переданное окно
     @staticmethod
     def close_window(window_to_close):
         if window_to_close is not None:
             window_to_close.deleteLater()
+
+    # Метод обновления окна
+    @staticmethod
+    def update_window_on_layout(window, action_layout):
+        new_window = WindowApp.make_new_instance_of_class_from_object(window)
+        action_layout.addWidget(new_window)
+        WindowApp.close_window(window)
+
+    # Создает экземпляр класса, как и object
+    # object должен иметь полем класса args - аргументы конструктора
+    @staticmethod
+    def make_new_instance_of_class_from_object(object):
+        new_object = globals()[object.__class__.__name__](*object.args)
+        return new_object
 
 
 # Класс меню (слева основного окна приложения)
@@ -507,6 +522,11 @@ class WindowNodeWeb(QDialog):
         for group in self.hostgroups:
             print(group['groupid'], group['name'])
 
+        # Список аргументов конструктора при создании объекта
+        # Очередность та же, что и в конструкторе
+        # (Не нашел хорошей замены в python)
+        self.args = [zabbix, action_layout, window_menu]
+
         # API zabbix в сессии
         self.zabbix = zabbix
         # Текущий центральный лайаут, куда добавляются окна
@@ -659,7 +679,7 @@ class WindowNodeWeb(QDialog):
                 .layout().itemAt(2).widget().text()
             hostids_maybe_checked[key] = value
         self.hosts.delete_hosts(hostids_maybe_checked)
-        # TODO: update window
+        WindowApp.update_window_on_layout(self, self.action_layout)
 
 
 # Класс окна добавления нового хоста
