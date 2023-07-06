@@ -1,5 +1,5 @@
-import inspect
 import sys
+import inspect
 import threading
 
 from PyQt5.QtCore import Qt, QSize
@@ -9,7 +9,7 @@ from PyQt5.QtWidgets import QApplication, QLabel, QVBoxLayout, QLineEdit, \
     QWidget, QGridLayout
 
 from pyzabbix import ZabbixAPI, ZabbixAPIException
-from app_logic import Terminal, Hosts, Items, Triggers
+from app_logic import Terminal, Hosts, Items, Triggers, Account, Settings
 
 
 # Класс окна с авторизацией
@@ -55,7 +55,7 @@ class WindowLogin(QDialog):
         label_url = QLabel("URL:")
         layout_input.addWidget(label_url)
 
-        self.input_url = QLineEdit("http://25.63.71.93/")
+        self.input_url = QLineEdit("http://25.71.15.72/")
         layout_input.addWidget(self.input_url)
 
         label_user = QLabel("Пользователь:")
@@ -67,7 +67,7 @@ class WindowLogin(QDialog):
         label_password = QLabel("Пароль:")
         layout_input.addWidget(label_password)
 
-        self.input_password = QLineEdit("zabbix")
+        self.input_password = QLineEdit("123456za")
         self.input_password.setEchoMode(QLineEdit.Password)
         layout_input.addWidget(self.input_password)
 
@@ -138,8 +138,10 @@ class WindowApp(QDialog):
 
         # Отступы между краями главного лайаута
         main_layout.setContentsMargins(0, 0, 0, 0)
+
         # Установка того, что пространство между лайаутом и окном будет 0
         main_layout.setSpacing(0)
+
         # Какой лайаут сколько частей занимает
         main_layout.setStretch(0, 2)
         main_layout.setStretch(1, 4)
@@ -168,10 +170,10 @@ class WindowApp(QDialog):
 
     # Создает новый объект, копируя аргументы конструктора старого объекта
     @staticmethod
-    def make_new_instance_of_class_from_object(object):
-        args = inspect.signature(object.__init__).parameters.values()
-        arg_values = [getattr(object, arg.name) for arg in args]
-        new_object = globals()[object.__class__.__name__](*arg_values)
+    def make_new_instance_of_class_from_object(cur_object):
+        args = inspect.signature(cur_object.__init__).parameters.values()
+        arg_values = [getattr(cur_object, arg.name) for arg in args]
+        new_object = globals()[cur_object.__class__.__name__](*arg_values)
         return new_object
 
 
@@ -316,12 +318,6 @@ class WindowMenu(QDialog):
             )
             self.action_layout.addWidget(window_node_web)
             self.cur_action_window = window_node_web
-            # Эта строчка нужна, так как при передаче cur_action_window
-            # в WindowNodeWeb через конструктор оно еще None и после
-            # присваивания cur_action_window ссылки, это же поле в другом
-            # классе остается все еще None
-            # Тут мы передаем экземпляру ссылку на самого себя
-            # В дальнейшем мы так будем делать всегда
         elif name_window == "window_users":
             self.close_window_action()
             window_users = WindowUsers(self.zabbix, self.action_layout)
@@ -357,7 +353,7 @@ class WindowMenu(QDialog):
     # Метод, который вызывается при нажатии на любую кнопку
     def button_clicked(self, button):
         for btn in self.buttons_menu:  # Проверяем каждую кнопку
-            if btn != button:  # Если она не равна текущей нажатой кнопке,
+            if btn != button:  # Если она не равна текущей нажатой кнопке
                 btn.setEnabled(True)
         # Состояние текущей нажатой кнопки устанавливается во включенное и
         # нажатое
@@ -369,7 +365,7 @@ class WindowAccount(QDialog):
         super().__init__()
 
         # Создаем словарь с данными для того, чтобы не делать кучу запросов
-        self.data = zabbix.user.checkAuthentication(sessionid=zabbix.auth)
+        self.user_data = Account.get_cur_user_data(zabbix)
 
         self.setFixedSize(600, 700)
         self.setStyleSheet(open('res/styles/window_account.css').read())
@@ -381,10 +377,10 @@ class WindowAccount(QDialog):
         icon = QLabel()
         icon.setPixmap(QIcon("res/icon/user_account.svg").pixmap(150, 150))
 
-        name = QLabel(self.data.get('name'))
+        name = QLabel(self.user_data.get('name'))
         name.setObjectName("name")
 
-        surname = QLabel(self.data.get('surname'))
+        surname = QLabel(self.user_data.get('surname'))
         surname.setObjectName("name")
 
         username_label = QLabel("Логин: ")
@@ -393,8 +389,8 @@ class WindowAccount(QDialog):
         lang_label = QLabel("Язык: ")
         lang_label.setObjectName("label")
 
-        username = QLabel(self.data.get('username'))
-        lang = QLabel(self.data.get('lang'))
+        username = QLabel(self.user_data.get('username'))
+        lang = QLabel(self.user_data.get('lang'))
 
         # Создаем главный лайаут
         main_layout = QVBoxLayout(self)
@@ -402,7 +398,7 @@ class WindowAccount(QDialog):
         # Создаем верхний и нижний лайауты
         top_layout = QHBoxLayout()
         bottom_layout = QHBoxLayout()
-        bottom_layout.setContentsMargins(0, 0, 0, 300)
+        bottom_layout.setContentsMargins(0, 0, 0, 350)
 
         # Создаем угловые лайауты
         left_top_layout = QVBoxLayout()
@@ -438,6 +434,7 @@ class WindowAccount(QDialog):
 
         right_bottom_layout.addWidget(username)
         right_bottom_layout.addWidget(lang)
+
         # Отступы между краями главного лайаута
         main_layout.setContentsMargins(0, 0, 0, 0)
 
@@ -449,8 +446,96 @@ class WindowSettings(QDialog):
         # Инициализируем текущую сессию
         self.zabbix = zabbix
 
+        # Создаем экземпляр класса логики
+        self.settings_logic = Settings(zabbix)
+
         self.setFixedSize(600, 700)
         self.setStyleSheet(open('res/styles/window_settings.css').read())
+
+        # Создаем все нужные лейблы
+        title = QLabel("Настройки")
+        title.setObjectName("title")
+
+        # Создаем главный лайаут
+        main_layout = QVBoxLayout(self)
+
+        # Создаем нижний лайаут
+        bottom_layout = QHBoxLayout()
+        bottom_layout.setContentsMargins(0, 0, 0, 250)
+
+        # Создаем два угловых нижних лайаута
+        left_bottom_layout = QVBoxLayout()
+        left_bottom_layout.setAlignment(Qt.AlignRight | Qt.AlignTop)
+
+        right_bottom_layout = QVBoxLayout()
+        right_bottom_layout.setAlignment(Qt.AlignLeft | Qt.AlignTop)
+
+        # Добавляем все лайауты
+        main_layout.addWidget(title)
+        main_layout.addLayout(bottom_layout)
+
+        bottom_layout.addLayout(left_bottom_layout)
+        bottom_layout.addLayout(right_bottom_layout)
+
+        # Создаем интерактивные элементы
+        label_new_password = QLabel("Сменить пароль: ")
+        label_new_password.setContentsMargins(0, 0, 0, 140)
+        label_new_password.setObjectName('label')
+
+        self.old_password = QLineEdit()
+        self.old_password.setPlaceholderText("Текущий пароль")
+
+        self.new_password = QLineEdit()
+        self.new_password.setPlaceholderText("Новый пароль")
+
+        self.repeat_new_password = QLineEdit()
+        self.repeat_new_password.setPlaceholderText(
+            "Новый пароль (подтверждение)"
+        )
+
+        button_password = QPushButton("Сменить")
+        button_password.setObjectName("change")
+        button_password.clicked.connect(self.click_button_password)
+
+        label_new_login = QLabel("Сменить логин: ")
+        label_new_login.setObjectName('label')
+
+        self.password = QLineEdit()
+        self.password.setPlaceholderText("Текущий пароль")
+
+        self.new_login = QLineEdit()
+        self.new_login.setPlaceholderText("Новый логин")
+
+        button_login = QPushButton("Сменить")
+        button_login.setObjectName("change")
+        button_login.clicked.connect(self.click_button_login)
+
+        # Добавляем все на лайауты
+        left_bottom_layout.addWidget(label_new_password)
+        left_bottom_layout.addWidget(label_new_login)
+
+        right_bottom_layout.addWidget(self.old_password)
+        right_bottom_layout.addWidget(self.new_password)
+        right_bottom_layout.addWidget(self.repeat_new_password)
+        right_bottom_layout.addWidget(button_password)
+
+        right_bottom_layout.addWidget(self.password)
+        right_bottom_layout.addWidget(self.new_login)
+        right_bottom_layout.addWidget(button_login)
+
+        # Отступы между краями главного лайаута
+        main_layout.setContentsMargins(0, 0, 0, 0)
+
+    def click_button_password(self):
+        QMessageBox.information(
+            self, "Смена пароля", self.settings_logic.change_password(
+                self.old_password.text(), self.new_password.text(),
+                self.repeat_new_password.text()))
+
+    def click_button_login(self):
+        QMessageBox.information(
+            self, "Смена логина", self.settings_logic.change_login(
+                self.new_login.text(), self.password.text()))
 
 
 # Класс окна терминала, в котором
@@ -477,8 +562,10 @@ class WindowTerminal(QDialog):
         # Создаем скролл, чтобы можно было смотреть предыдущие записи
         scroll_area = QScrollArea(self)
         scroll_area.setFixedSize(300, 700)
+
         # Отключаем горизонтальный скролл
         scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+
         # Включаем динамическое масштабирование,
         # т.к. у нас будет увеличиваться окно
         scroll_area.setWidgetResizable(True)
@@ -521,24 +608,24 @@ class WindowNodeWeb(QDialog):
         self.items = Items(zabbix)
         self.triggers = Triggers(zabbix)
 
-        # tmp code Показывает группы и их id
-        self.hostgroups = zabbix.hostgroup.get(output=['groupid', 'name'])
-        for group in self.hostgroups:
-            print(group['groupid'], group['name'])
-
         # API zabbix в сессии
         self.zabbix = zabbix
+
         # Текущий центральный лайаут, куда добавляются окна
         self.action_layout = action_layout
+
         # Ссылка на текущее открытое окно в центральном лайауте
         self.window_menu = window_menu
 
         # Основной лайаут - вертикальный
-        root_VBox_layout = QVBoxLayout(self)
+        root_vbox_layout = QVBoxLayout(self)
+
         # В основной лайаут добавится зона с прокруткой
         main_window_scroll_area = QScrollArea()
+
         # И панель с кнопками
         panel_of_buttons_widget = QWidget()
+
         # Отключаем горизонтальный скролл
         main_window_scroll_area.setHorizontalScrollBarPolicy(
             Qt.ScrollBarAlwaysOff
@@ -550,8 +637,10 @@ class WindowNodeWeb(QDialog):
 
         # Виджет, который вставится в scroll area
         main_window_scroll_widget = QWidget()
+
         # Лайаут панели с кнопками вставится в ее виджет
         panel_of_buttons_layout = QHBoxLayout()
+
         # Добавление кнопок в соответствующую панель
         add_host_button = QPushButton("Add")
         add_host_button.clicked.connect(
@@ -561,10 +650,12 @@ class WindowNodeWeb(QDialog):
         delete_chosen_hosts_button.clicked.connect(
             lambda: self.delete_chosen_hosts_button_clicked()
         )
+
         # Основной лайаут scroll area
         self.main_window_hosts_layout = QGridLayout()
 
         hosts = self.hosts.get_hosts()
+
         # Для каждого хоста создается свой виджет и лайаут его
         # надписей и кнопок
         for host in hosts:
@@ -622,8 +713,8 @@ class WindowNodeWeb(QDialog):
         panel_of_buttons_layout.addWidget(delete_chosen_hosts_button)
         main_window_scroll_area.setWidget(main_window_scroll_widget)
         panel_of_buttons_widget.setLayout(panel_of_buttons_layout)
-        root_VBox_layout.addWidget(main_window_scroll_area)
-        root_VBox_layout.addWidget(panel_of_buttons_widget)
+        root_vbox_layout.addWidget(main_window_scroll_area)
+        root_vbox_layout.addWidget(panel_of_buttons_widget)
 
     # def items_button_clicked(self, host):
     #     window_items = WindowItems(self.zabbix, self.action_layout, host)
@@ -644,7 +735,7 @@ class WindowNodeWeb(QDialog):
             self.window_menu.cur_action_window = window_items
             self.action_layout.addWidget(window_items)
             WindowApp.close_window(self)
-        return button_clicked
+        return button_clicked    
 
     # Функция обработки события нажатия на триггеры хоста
     def triggers_button_clicked(self, host):
@@ -694,35 +785,40 @@ class WindowAddHost(QDialog):
 
         # API zabbix в сессии
         self.zabbix = zabbix
+
         # Текущий центральный лайаут, куда добавляются окна
         self.action_layout = action_layout
+
         # Ссылка на текущее открытое окно в центральном лайауте
         self.window_menu = window_menu
 
         # Основной лайаут - вертикальный
-        root_VBox_layout = QVBoxLayout(self)
+        root_vbox_layout = QVBoxLayout(self)
+
         # Кнопка возврата к окну хостов в основном лайауте
         return_button = QPushButton()
         return_button.setIcon(QIcon("res/icon/arrow_back.svg"))
         return_button.setIconSize(QSize(50, 50))
+
         # Привязка обработки события нажатия на нее
         return_button.clicked.connect(
             lambda: self.return_button_clicked()
         )
+
         # Поля для заполнения
         self.host_name_field = QLineEdit()
-        self.host_name_field.setPlaceholderText
         self.host_ip_field = QLineEdit()
+
         # Кнопка добавления
         host_create_button = QPushButton("Добавить")
         host_create_button.clicked.connect(
             lambda: self.host_create_button_clicked()
         )
 
-        root_VBox_layout.addWidget(return_button)
-        root_VBox_layout.addWidget(self.host_name_field)
-        root_VBox_layout.addWidget(self.host_ip_field)
-        root_VBox_layout.addWidget(host_create_button)
+        root_vbox_layout.addWidget(return_button)
+        root_vbox_layout.addWidget(self.host_name_field)
+        root_vbox_layout.addWidget(self.host_ip_field)
+        root_vbox_layout.addWidget(host_create_button)
 
     # Функция выполняет возврат обратно к окну хостов
     def return_button_clicked(self):
@@ -754,23 +850,30 @@ class WindowItems(QDialog):
 
         # API zabbix в сессии
         self.zabbix = zabbix
+
         # Хост, у которого просматриваются элементы данных
         self.host = host
+
         # Текущий центральный лайаут, куда добавляются окна
         self.action_layout = action_layout
+
         # Ссылка на текущее открытое окно в центральном лайауте
         self.window_menu = window_menu
 
         # Основной лайаут - вертикальный
-        root_VBox_layout = QVBoxLayout(self)
+        root_vbox_layout = QVBoxLayout(self)
+
         # Кнопка возврата к окну хостов в основном лайауте
         return_button = QPushButton()
         return_button.setIcon(QIcon("res/icon/arrow_back.svg"))
         return_button.setIconSize(QSize(50, 50))
+
         # Привязка обработки события нажатия на нее
         return_button.clicked.connect(lambda: self.return_button_clicked())
+
         # Основное окно со скроллом элементов данных
         main_window_scroll_area = QScrollArea()
+
         # Отключаем горизонтальный скролл
         main_window_scroll_area.setHorizontalScrollBarPolicy(
             Qt.ScrollBarAlwaysOff
@@ -784,8 +887,10 @@ class WindowItems(QDialog):
 
         # Виджет скролл-окна
         main_window_scroll_widget = QWidget()
+
         # Лайаут панели с кнопками вставится в ее виджет
         panel_of_buttons_layout = QHBoxLayout()
+
         # Добавление соответствующих кнопок в лайаут панели
         add_item_button = QPushButton("Add")
         add_item_button.clicked.connect(
@@ -799,6 +904,7 @@ class WindowItems(QDialog):
         main_window_items_layout = QGridLayout()
 
         items = self.items.get_items(self.host)
+
         # Для каждого элемента данных создается виджет и
         # лайаут надписей с информацией
         for item in items:
@@ -829,9 +935,9 @@ class WindowItems(QDialog):
         panel_of_buttons_layout.addWidget(delete_chosen_items_button)
         main_window_scroll_area.setWidget(main_window_scroll_widget)
         panel_of_buttons_widget.setLayout(panel_of_buttons_layout)
-        root_VBox_layout.addWidget(return_button)
-        root_VBox_layout.addWidget(main_window_scroll_area)
-        root_VBox_layout.addWidget(panel_of_buttons_widget)
+        root_vbox_layout.addWidget(return_button)
+        root_vbox_layout.addWidget(main_window_scroll_area)
+        root_vbox_layout.addWidget(panel_of_buttons_widget)
 
     # Функция выполняет возврат обратно к окну хостов
     def return_button_clicked(self):
@@ -861,26 +967,33 @@ class WindowTriggers(QDialog):
 
         # Создаем экземпляр логики триггеров
         self.triggers = Triggers(zabbix)
+
         # API zabbix в сессии
         self.zabbix = zabbix
+
         # Текущий хост, к которому привязаны триггеры
         self.host = host
+
         # Текущий центральный лайаут, куда добавляются окна
         self.action_layout = action_layout
+
         # Ссылка на текущее открытое окно в центральном лайауте
         self.window_menu = window_menu
 
         # Основной лайаут - вертикальный
-        root_VBox_layout = QVBoxLayout(self)
+        root_vbox_layout = QVBoxLayout(self)
+
         # Кнопка возврата к окну хостов в основном лайауте
         return_button = QPushButton()
         return_button.setIcon(QIcon("res/icon/arrow_back.svg"))
         return_button.setIconSize(QSize(50, 50))
+
         # Привязка обработки события нажатия на нее
         return_button.clicked.connect(lambda: self.return_button_clicked())
 
         # В основной лайаут добавится зона с прокруткой
         main_window_scroll_area = QScrollArea()
+
         # Отключаем горизонтальный скролл
         main_window_scroll_area.setHorizontalScrollBarPolicy(
             Qt.ScrollBarAlwaysOff
@@ -894,8 +1007,10 @@ class WindowTriggers(QDialog):
 
         # Виджет скролл-окна
         main_window_scroll_widget = QWidget()
+
         # Лайаут панели с кнопками вставится в ее виджет
         panel_of_buttons_layout = QHBoxLayout()
+
         # Добавление соответствующих кнопок в лайаут панели
         add_trigger_button = QPushButton("Add")
         add_trigger_button.clicked.connect(
@@ -905,10 +1020,12 @@ class WindowTriggers(QDialog):
         delete_chosen_triggers_button.clicked.connect(
             lambda: self.delete_chosen_triggers_button_clicked()
         )
+
         # Основной лайаут scroll area
         main_window_triggers_layout = QGridLayout()
 
         triggers = self.triggers.get_triggers(self.host)
+
         # Для каждого элемента данных создается виджет и
         # лайаут надписей с информацией
         for trigger in triggers:
@@ -939,9 +1056,9 @@ class WindowTriggers(QDialog):
         panel_of_buttons_layout.addWidget(delete_chosen_triggers_button)
         main_window_scroll_area.setWidget(main_window_scroll_widget)
         panel_of_buttons_widget.setLayout(panel_of_buttons_layout)
-        root_VBox_layout.addWidget(return_button)
-        root_VBox_layout.addWidget(main_window_scroll_area)
-        root_VBox_layout.addWidget(panel_of_buttons_widget)
+        root_vbox_layout.addWidget(return_button)
+        root_vbox_layout.addWidget(main_window_scroll_area)
+        root_vbox_layout.addWidget(panel_of_buttons_widget)
 
     # Функция выполняет возврат обратно к окну хостов
     def return_button_clicked(self):
@@ -969,6 +1086,9 @@ class WindowUsers(QDialog):
 
         self.setFixedSize(600, 700)
         self.setStyleSheet(open('res/styles/window_users.css').read())
+
+        self.zabbix = zabbix
+        self.action_layout = action_layout
 
 
 if __name__ == '__main__':

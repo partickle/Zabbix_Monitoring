@@ -1,0 +1,86 @@
+import re
+from pyzabbix import ZabbixAPI, ZabbixAPIException
+
+
+class Settings:
+    def __init__(self, zabbix):
+        # Инициализируем сессию
+        self.zabbix = zabbix
+
+        # Получаем данные залогиненного пользователя
+        self.user_data = zabbix.user.checkAuthentication(sessionid=zabbix.auth)
+
+    # Метод для смены пароля (возвращает строки для QMessageBox)
+    def change_password(self, old_password, new_password, repeat_new_password):
+        # Словарь со сменяемыми ключами
+        change_data = {
+            'userid': self.user_data.get('userid'),
+            'passwd': new_password,
+            'current_passwd': old_password  # Специальный ключ для смены пароля
+        }
+
+        # Различные проверки
+        if old_password == "" \
+                or new_password == "" or repeat_new_password == "":
+            return "Не оставляйте пустых строк"
+
+        # Проверка на корректность текущего пароля
+        try:
+            # Для этого создаем временную сессию и вводим старый пароль
+            check_password = ZabbixAPI(self.zabbix.url)
+            check_password.login(
+                user=self.user_data.get('username'), password=old_password
+            )
+            check_password.user.logout()
+
+        # Если он будет неправильный, то будет ZabbixAPIException
+        except ZabbixAPIException:
+            return "Вы ввели неверный текущий пароль. Повторите попытку"
+
+        if len(new_password) < 8:
+            return "Пароль должен быть больше 8 символов"
+        elif len(re.findall(r'a-zA-Z', new_password)) > 2:
+            return "Пароль должен содержать хотя бы две буквы"
+        elif new_password != repeat_new_password:
+            return "Пароли не совпадают"
+
+        # Меняем текущую дату на кастомную
+        try:
+            self.zabbix.user.update(change_data)
+            # Логинимся заново, потому что поменяли пароль
+            # Иначе полетит терминал
+            self.zabbix.login(
+                user=self.user_data.get('username'), password=new_password
+            )
+            return "Вы успешно сменили пароль!"
+
+        except ZabbixAPIException as e:
+            return f'{e}'
+
+    # Метод для смены логина (тут все аналогично)
+    def change_login(self, new_login, password):
+        change_data = {
+            'userid': self.user_data.get('userid'),
+            'passwd': password,
+            'username': new_login
+        }
+
+        if password == "" or new_login == "":
+            return "Не оставляйте пустых строк"
+
+        try:
+            check_password = ZabbixAPI(self.zabbix.url)
+            check_password.login(
+                user=self.user_data.get('username'), password=password
+            )
+            check_password.user.logout()
+
+        except ZabbixAPIException:
+            return "Вы ввели неверный пароль. Повторите попытку"
+
+        try:
+            self.zabbix.user.update(change_data)
+            return "Вы успешно сменили логин!"
+
+        except ZabbixAPIException as e:
+            return f'{e}'
