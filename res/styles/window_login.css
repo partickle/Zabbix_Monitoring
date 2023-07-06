@@ -23,6 +23,33 @@ QLineEdit {
     border-radius: 3px;
 }
 
+QCheckBox {
+    color: #333333;
+    font-size: 16px;
+    margin-bottom: 30px;
+}
+
+QCheckBox::indicator {
+    width: 25px;
+    height: 25px;
+}
+
+QCheckBox::indicator:checked {
+    image: url("res/icon/check_box.svg");
+}
+
+QCheckBox::indicator:checked:hover, QCheckBox::indicator:checked:pressed {
+    image: url("res/icon/check_box_hover.svg");
+}
+
+QCheckBox::indicator:unchecked {
+    image: url("res/icon/check_box_empty.svg");
+}
+
+QCheckBox::indicator:unchecked:hover, QCheckBox::indicator:unchecked:pressed {
+    image: url("res/icon/check_box_empty_hover.svg");
+}
+
 QPushButton {
     background-color: #9010ee;
     color: #FFFFFF;
