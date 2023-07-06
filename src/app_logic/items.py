@@ -21,10 +21,11 @@ class Items:
         items_of_host = []
         for item in self.items:
             if item['hostid'] == host['hostid']:
-                item_of_host = {}
-                item_of_host['itemid'] = item['itemid']
-                item_of_host['name'] = item['name']
-                item_of_host['key_'] = item['key_']
-                item_of_host['hostid'] = item['hostid']
+                item_of_host = {
+                    'itemid': item['itemid'],
+                    'name': item['name'],
+                    'key_': item['key_'],
+                    'hostid': item['hostid']
+                }
                 items_of_host.append(item_of_host)
         return items_of_host

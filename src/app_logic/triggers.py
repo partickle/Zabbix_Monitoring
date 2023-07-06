@@ -24,10 +24,11 @@ class Triggers:
         triggers_of_host = []
         for trigger in self.triggers:
             if trigger['hosts'][0]['hostid'] == host['hostid']:
-                trigger_of_host = {}
-                trigger_of_host['triggerid'] = trigger['triggerid']
-                trigger_of_host['description'] = trigger['description']
-                trigger_of_host['expression'] = trigger['expression']
-                trigger_of_host['hosts'] = trigger['hosts']
+                trigger_of_host = {
+                    'triggerid': trigger['triggerid'],
+                    'description': trigger['description'],
+                    'expression': trigger['expression'],
+                    'hosts': trigger['hosts']
+                }
                 triggers_of_host.append(trigger_of_host)
         return triggers_of_host
