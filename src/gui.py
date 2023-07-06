@@ -9,7 +9,8 @@ from PyQt5.QtWidgets import QApplication, QLabel, QVBoxLayout, QLineEdit, \
     QWidget, QGridLayout
 
 from pyzabbix import ZabbixAPI, ZabbixAPIException
-from app_logic import Terminal, Hosts, Items, Triggers, Account, Settings
+from app_logic import Terminal, Hosts, Items, Triggers, Account, Settings, \
+    Interfaces
 
 
 # Класс окна с авторизацией
@@ -55,7 +56,7 @@ class WindowLogin(QDialog):
         label_url = QLabel("URL:")
         layout_input.addWidget(label_url)
 
-        self.input_url = QLineEdit("http://25.71.15.72/")
+        self.input_url = QLineEdit("http://25.63.71.93/")
         layout_input.addWidget(self.input_url)
 
         label_user = QLabel("Пользователь:")
@@ -67,7 +68,7 @@ class WindowLogin(QDialog):
         label_password = QLabel("Пароль:")
         layout_input.addWidget(label_password)
 
-        self.input_password = QLineEdit("123456za")
+        self.input_password = QLineEdit("zabbix")
         self.input_password.setEchoMode(QLineEdit.Password)
         layout_input.addWidget(self.input_password)
 
@@ -739,7 +740,7 @@ class WindowNodeWeb(QDialog):
             self.window_menu.cur_action_window = window_items
             self.action_layout.addWidget(window_items)
             WindowApp.close_window(self)
-        return button_clicked    
+        return button_clicked
 
     # Функция обработки события нажатия на триггеры хоста
     def triggers_button_clicked(self, host):
@@ -905,7 +906,7 @@ class WindowItems(QDialog):
             lambda: self.delete_chosen_items_button_clicked()
         )
         # Основной лайаут scroll area
-        main_window_items_layout = QGridLayout()
+        self.main_window_items_layout = QGridLayout()
 
         items = self.items.get_items(self.host)
 
@@ -931,10 +932,10 @@ class WindowItems(QDialog):
             current_item_layout.addWidget(current_item_key_label)
 
             current_item_widget.setLayout(current_item_layout)
-            main_window_items_layout.addWidget(current_item_widget)
+            self.main_window_items_layout.addWidget(current_item_widget)
 
         # Вложение элементов друг в друга так, как это было сказано ранее
-        main_window_scroll_widget.setLayout(main_window_items_layout)
+        main_window_scroll_widget.setLayout(self.main_window_items_layout)
         panel_of_buttons_layout.addWidget(add_item_button)
         panel_of_buttons_layout.addWidget(delete_chosen_items_button)
         main_window_scroll_area.setWidget(main_window_scroll_widget)
@@ -952,14 +953,114 @@ class WindowItems(QDialog):
         self.action_layout.addWidget(window_hosts)
         WindowApp.close_window(self)
 
-    # Функция вызывает новое окно добавление нового элемента данных
+    # Функция открытия окна добавления элемента данных по нажатию на кнопку
     def add_item_button_clicked(self):
-        pass
+        window_add_item = WindowAddItem(
+            self.zabbix, self.action_layout, self.window_menu, self.host
+        )
+        self.window_menu.cur_action_window = window_add_item
+        self.action_layout.addWidget(window_add_item)
+        WindowApp.close_window(self)
 
-    # Функция удаляет те элементы данных, для которых установлен
-    # чекбокс
+    # Функция удаления элементов данных, которым установлена галочка в чекбоксе
     def delete_chosen_items_button_clicked(self):
-        pass
+        itemids_maybe_checked = {}
+        for i in range(self.main_window_items_layout.rowCount()):
+            value = self.main_window_items_layout \
+                .itemAtPosition(i, 0).widget() \
+                .layout().itemAt(0).widget().isChecked()
+            key = self.main_window_items_layout \
+                .itemAtPosition(i, 0).widget() \
+                .layout().itemAt(2).widget().text()
+            itemids_maybe_checked[key] = value
+        self.items.delete_items(itemids_maybe_checked)
+        WindowApp.update_window_on_layout(self, self.action_layout)
+
+
+# Класс окна добавления нового элемента данных
+class WindowAddItem(QDialog):
+    def __init__(self, zabbix, action_layout, window_menu, host):
+        super().__init__()
+
+        self.setFixedSize(600, 700)
+        self.setStyleSheet(open('res/styles/window_add_host.css').read())
+
+        # Создает экземпляр логики хостов
+        self.items = Items(zabbix)
+
+        # Создаем экземпляр логики интерфейсов
+        self.interfaces = Interfaces(zabbix)
+
+        # API zabbix в сессии
+        self.zabbix = zabbix
+
+        # Хост, которому добавляется элемент данных
+        self.host = host
+
+        # Текущий центральный лайаут, куда добавляются окна
+        self.action_layout = action_layout
+
+        # Ссылка на текущее открытое окно в центральном лайауте
+        self.window_menu = window_menu
+
+        # Основной лайаут - вертикальный
+        root_vbox_layout = QVBoxLayout(self)
+
+        # Кнопка возврата к окну элементов данных в основном лайауте
+        return_button = QPushButton()
+        return_button.setIcon(QIcon("res/icon/arrow_back.svg"))
+        return_button.setIconSize(QSize(50, 50))
+
+        # Привязка обработки события нажатия на нее
+        return_button.clicked.connect(
+            lambda: self.return_button_clicked()
+        )
+
+        # Поля для заполнения
+        self.item_name_field = QLineEdit("pinging")
+        self.key_field = QLineEdit("agent.ping")
+        self.type_field = QLineEdit("0")
+        self.value_type_field = QLineEdit("3")
+        self.delay_in_s_field = QLineEdit("30")
+
+        # Кнопка добавления
+        item_create_button = QPushButton("Добавить")
+        item_create_button.clicked.connect(
+            lambda: self.item_create_button_clicked()
+        )
+
+        root_vbox_layout.addWidget(return_button)
+
+        root_vbox_layout.addWidget(self.item_name_field)
+        root_vbox_layout.addWidget(self.key_field)
+        root_vbox_layout.addWidget(self.type_field)
+        root_vbox_layout.addWidget(self.value_type_field)
+        root_vbox_layout.addWidget(self.delay_in_s_field)
+
+        root_vbox_layout.addWidget(item_create_button)
+
+    # Функция выполняет возврат обратно к окну элементов данных
+    def return_button_clicked(self):
+        window_hosts = WindowItems(
+            self.zabbix, self.action_layout, self.window_menu, self.host
+        )
+        self.window_menu.cur_action_window = window_hosts
+        self.action_layout.addWidget(window_hosts)
+        WindowApp.close_window(self)
+
+    # Добавление хоста и возврат к окну хостов
+    def item_create_button_clicked(self):
+        interfaces = self.interfaces.get_interfaces(self.host)
+        self.items.add_item(
+            self.host['hostid'],
+            interfaces['interfaceid'],
+            self.item_name_field.text(),
+            self.key_field.text(),
+            self.type_field.text(),
+            self.value_type_field.text(),
+            self.delay_in_s_field.text()
+        )
+        self.return_button_clicked()
 
 
 # Класс окна триггеров конкретного хоста
@@ -1073,14 +1174,93 @@ class WindowTriggers(QDialog):
         self.action_layout.addWidget(window_hosts)
         WindowApp.close_window(self)
 
-    # Функция вызывает новое окно добавление нового триггера
+    # Функция открытия окна добавления хоста по нажатию на кнопку
     def add_trigger_button_clicked(self):
-        pass
+        window_add_host = WindowAddHost(
+            self.zabbix, self.action_layout, self.window_menu
+        )
+        self.window_menu.cur_action_window = window_add_host
+        self.action_layout.addWidget(window_add_host)
+        WindowApp.close_window(self)
 
-    # Функция удаляет те триггеры, для которых установлен
-    # чекбокс
+    # Функция удаления хостов, которым установлена галочка в чекбоксе
     def delete_chosen_triggers_button_clicked(self):
-        pass
+        hostids_maybe_checked = {}
+        for i in range(self.main_window_hosts_layout.rowCount()):
+            value = self.main_window_hosts_layout \
+                .itemAtPosition(i, 0).widget() \
+                .layout().itemAt(0).widget().isChecked()
+            key = self.main_window_hosts_layout \
+                .itemAtPosition(i, 0).widget() \
+                .layout().itemAt(2).widget().text()
+            hostids_maybe_checked[key] = value
+        self.hosts.delete_hosts(hostids_maybe_checked)
+        WindowApp.update_window_on_layout(self, self.action_layout)
+
+
+# Класс окна добавления нового триггера
+class WindowAddTrigger(QDialog):
+    def __init__(self, zabbix, action_layout, window_menu):
+        super().__init__()
+
+        self.setFixedSize(600, 700)
+        self.setStyleSheet(open('res/styles/window_add_host.css').read())
+
+        # Создает экземпляр логики хостов
+        self.hosts = Hosts(zabbix)
+
+        # API zabbix в сессии
+        self.zabbix = zabbix
+
+        # Текущий центральный лайаут, куда добавляются окна
+        self.action_layout = action_layout
+
+        # Ссылка на текущее открытое окно в центральном лайауте
+        self.window_menu = window_menu
+
+        # Основной лайаут - вертикальный
+        root_vbox_layout = QVBoxLayout(self)
+
+        # Кнопка возврата к окну хостов в основном лайауте
+        return_button = QPushButton()
+        return_button.setIcon(QIcon("res/icon/arrow_back.svg"))
+        return_button.setIconSize(QSize(50, 50))
+
+        # Привязка обработки события нажатия на нее
+        return_button.clicked.connect(
+            lambda: self.return_button_clicked()
+        )
+
+        # Поля для заполнения
+        self.host_name_field = QLineEdit()
+        self.host_ip_field = QLineEdit()
+
+        # Кнопка добавления
+        host_create_button = QPushButton("Добавить")
+        host_create_button.clicked.connect(
+            lambda: self.host_create_button_clicked()
+        )
+
+        root_vbox_layout.addWidget(return_button)
+        root_vbox_layout.addWidget(self.host_name_field)
+        root_vbox_layout.addWidget(self.host_ip_field)
+        root_vbox_layout.addWidget(host_create_button)
+
+    # Функция выполняет возврат обратно к окну хостов
+    def return_button_clicked(self):
+        window_hosts = WindowNodeWeb(
+            self.zabbix, self.action_layout, self.window_menu
+        )
+        self.window_menu.cur_action_window = window_hosts
+        self.action_layout.addWidget(window_hosts)
+        WindowApp.close_window(self)
+
+    # Добавление хоста и возврат к окну хостов
+    def host_create_button_clicked(self):
+        self.hosts.add_host(
+            self.host_name_field.text(), self.host_ip_field.text()
+        )
+        self.return_button_clicked()
 
 
 # Класс активного окна с пользователями

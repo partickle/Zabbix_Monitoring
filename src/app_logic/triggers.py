@@ -32,3 +32,30 @@ class Triggers:
                 }
                 triggers_of_host.append(trigger_of_host)
         return triggers_of_host
+
+    # Метод добавляет хост с указанными параметрами
+    def add_host(self, host_name, host_ip):
+        self.zabbix.host.create(
+            host=host_name,
+            interfaces={
+                "type": 1,
+                "main": 1,
+                "useip": 1,
+                "ip": host_ip,
+                "dns": "",
+                "port": "10050"
+            },
+            groups={"groupid": "23"}
+        )
+
+    # Метод отправляет запрос на удаление хостов,
+    # указанных в словаре как true, по ключу hostid
+    def delete_hosts(self, hostids_maybe_checked):
+        hostids_to_delete = []
+        # Проходим по всем ключам словаря
+        for hostid in hostids_maybe_checked:
+            # Проверяем состояние hostid
+            if hostids_maybe_checked[hostid]:
+                hostids_to_delete.append(hostid)
+        # * нужно, чтобы распаковать список как множество аргументов
+        self.zabbix.host.delete(*hostids_to_delete)
