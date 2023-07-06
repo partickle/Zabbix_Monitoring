@@ -9,7 +9,8 @@ from PyQt5.QtWidgets import QApplication, QLabel, QVBoxLayout, QLineEdit, \
     QWidget, QGridLayout
 
 from pyzabbix import ZabbixAPI, ZabbixAPIException
-from app_logic import Terminal, Hosts, Items, Triggers, Account, Settings
+from app_logic import Terminal, Hosts, Items, Triggers, Account, \
+    Settings, Login
 
 
 # Класс окна с авторизацией
@@ -20,8 +21,11 @@ class WindowLogin(QDialog):
         # использоваться позже
         self.window_menu = None
 
+        # Создаем экземпляр класса логики
+        self.login_logic = Login()
+
         self.setWindowTitle("Авторизация")
-        self.setFixedSize(400, 550)
+        self.setFixedSize(400, 580)
 
         # Применение css-стилей через чтение файла
         # (setStyleSheet как аргумент использует строку)
@@ -55,21 +59,26 @@ class WindowLogin(QDialog):
         label_url = QLabel("URL:")
         layout_input.addWidget(label_url)
 
-        self.input_url = QLineEdit("http://25.71.15.72/")
+        self.input_url = QLineEdit(self.login_logic.get_url())
         layout_input.addWidget(self.input_url)
 
         label_user = QLabel("Пользователь:")
         layout_input.addWidget(label_user)
 
-        self.input_user = QLineEdit("Admin")
+        self.input_user = QLineEdit(self.login_logic.get_login())
         layout_input.addWidget(self.input_user)
 
         label_password = QLabel("Пароль:")
         layout_input.addWidget(label_password)
 
-        self.input_password = QLineEdit("123456za")
+        self.input_password = QLineEdit(self.login_logic.get_password())
         self.input_password.setEchoMode(QLineEdit.Password)
         layout_input.addWidget(self.input_password)
+
+        self.check_box = QCheckBox("Сохранить данные для входа")
+        # Включаем/выключаем чекбокс
+        self.check_box.setChecked(self.login_logic.check_autologin())
+        layout_input.addWidget(self.check_box)
 
         button_login = QPushButton("Вход")
         button_login.clicked.connect(self.login)
@@ -91,6 +100,14 @@ class WindowLogin(QDialog):
             zabbix = ZabbixAPI(url)
             zabbix.login(user, password)
             self.close()
+
+            # Сохранение пароля
+            if self.check_box.isChecked():  # Если стоит галочка
+                # То перезаписываем json
+                Login.set_autologin(url, user, password)
+            else:  # Если нет, то
+                # То записываем пустые строки
+                Login.set_empty_autologin()
 
             # Создание окна меню
             self.window_menu = WindowApp(zabbix)
