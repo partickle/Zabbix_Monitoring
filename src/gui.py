@@ -484,14 +484,17 @@ class WindowSettings(QDialog):
 
         self.old_password = QLineEdit()
         self.old_password.setPlaceholderText("Текущий пароль")
+        self.old_password.setEchoMode(QLineEdit.Password)
 
         self.new_password = QLineEdit()
         self.new_password.setPlaceholderText("Новый пароль")
+        self.new_password.setEchoMode(QLineEdit.Password)
 
         self.repeat_new_password = QLineEdit()
         self.repeat_new_password.setPlaceholderText(
             "Новый пароль (подтверждение)"
         )
+        self.repeat_new_password.setEchoMode(QLineEdit.Password)
 
         button_password = QPushButton("Сменить")
         button_password.setObjectName("change")
@@ -502,6 +505,7 @@ class WindowSettings(QDialog):
 
         self.password = QLineEdit()
         self.password.setPlaceholderText("Текущий пароль")
+        self.password.setEchoMode(QLineEdit.Password)
 
         self.new_login = QLineEdit()
         self.new_login.setPlaceholderText("Новый логин")
