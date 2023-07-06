@@ -8,7 +8,7 @@ from PyQt5.QtWidgets import QApplication, QLabel, QVBoxLayout, QLineEdit, \
     QGridLayout
 
 from pyzabbix import ZabbixAPI, ZabbixAPIException
-from app_logic import Terminal, Hosts, Items, Triggers, Settings
+from app_logic import Terminal, Hosts, Items, Triggers, Account, Settings
 
 
 # Класс окна с авторизацией
@@ -289,7 +289,7 @@ class WindowAccount(QDialog):
         super().__init__()
 
         # Создаем словарь с данными для того, чтобы не делать кучу запросов
-        self.user_data = zabbix.user.checkAuthentication(sessionid=zabbix.auth)
+        self.user_data = Account.get_cur_user_data(zabbix)
 
         self.setFixedSize(600, 700)
         self.setStyleSheet(open('res/styles/window_account.css').read())
@@ -359,7 +359,8 @@ class WindowAccount(QDialog):
         right_bottom_layout.addWidget(username)
         right_bottom_layout.addWidget(lang)
 
-        main_layout.setContentsMargins(0, 0, 0, 0)  # Отступы между краями главного лайаута
+        # Отступы между краями главного лайаута
+        main_layout.setContentsMargins(0, 0, 0, 0)
 
 
 class WindowSettings(QDialog):
@@ -431,6 +432,7 @@ class WindowSettings(QDialog):
         button_login.setObjectName("change")
         button_login.clicked.connect(self.click_button_login)
 
+        # Добавляем все на лайауты
         left_bottom_layout.addWidget(label_new_password)
         left_bottom_layout.addWidget(label_new_login)
 
