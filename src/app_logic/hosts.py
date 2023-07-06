@@ -1,19 +1,42 @@
+# Класс логики работы с хостами
 class Hosts:
     def __init__(self, zabbix):
+        # При его инициализации посылается запрос к api zabbix
+        # И информация сохраняется в поле класса
         self.zabbix = zabbix
+        self.hosts_info = zabbix.host.get(output=['hostid', 'name', 'host'])
 
+    # Метод возвращает список всех хостов, кроме серверного
     def get_hosts(self):
-        hosts = self.zabbix.host.get(output=['hostid','name','host'])
         hosts_to_show = []
-        for host in hosts:
+        for host in self.hosts_info:
             if host['host'] != 'Zabbix server':
                 hosts_to_show.append(host)
         return hosts_to_show
 
-    def get_items(self, host):
-        items = self.zabbix.item.get(hostids=host['hostid'], output=['itemid','name'])
-        return items
+    # Метод добавляет хост с указанными параметрами
+    def add_host(self, host_name, host_ip):
+        self.zabbix.host.create(
+            host=host_name,
+            interfaces={
+                "type": 1,
+                "main": 1,
+                "useip": 1,
+                "ip": host_ip,
+                "dns": "",
+                "port": "10050"
+            },
+            groups={"groupid": "23"}
+        )
 
-    def get_triggers(self, host):
-        triggers = self.zabbix.trigger.get(hostids=host['hostid'], output=['triggerid','status'])
-        return triggers
+    # Метод отправляет запрос на удаление хостов,
+    # указанных в словаре как true, по ключу hostid
+    def delete_hosts(self, hostids_maybe_checked):
+        hostids_to_delete = []
+        # Проходим по всем ключам словаря
+        for hostid in hostids_maybe_checked:
+            # Проверяем состояние hostid
+            if hostids_maybe_checked[hostid]:
+                hostids_to_delete.append(hostid)
+        # * нужно, чтобы распаковать список как множество аргументов
+        self.zabbix.host.delete(*hostids_to_delete)

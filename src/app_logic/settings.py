@@ -20,14 +20,17 @@ class Settings:
         }
 
         # Различные проверки
-        if old_password == "" or new_password == "" or repeat_new_password == "":
+        if old_password == "" \
+                or new_password == "" or repeat_new_password == "":
             return "Не оставляйте пустых строк"
 
         # Проверка на корректность текущего пароля
         try:
             # Для этого создаем временную сессию и вводим старый пароль
             check_password = ZabbixAPI(self.zabbix.url)
-            check_password.login(user=self.user_data.get('username'), password=old_password)
+            check_password.login(
+                user=self.user_data.get('username'), password=old_password
+            )
             check_password.user.logout()
 
         # Если он будет неправильный, то будет ZabbixAPIException
@@ -46,7 +49,9 @@ class Settings:
             self.zabbix.user.update(change_data)
             # Логинимся заново, потому что поменяли пароль
             # Иначе полетит терминал
-            self.zabbix.login(user=self.user_data.get('username'), password=new_password)
+            self.zabbix.login(
+                user=self.user_data.get('username'), password=new_password
+            )
             return "Вы успешно сменили пароль!"
 
         except ZabbixAPIException as e:
@@ -65,7 +70,9 @@ class Settings:
 
         try:
             check_password = ZabbixAPI(self.zabbix.url)
-            check_password.login(user=self.user_data.get('username'), password=password)
+            check_password.login(
+                user=self.user_data.get('username'), password=password
+            )
             check_password.user.logout()
 
         except ZabbixAPIException:
