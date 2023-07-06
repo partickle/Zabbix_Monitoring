@@ -1,3 +1,4 @@
+import inspect
 import sys
 import threading
 
@@ -158,16 +159,19 @@ class WindowApp(QDialog):
 
     # Метод обновления окна
     @staticmethod
-    def update_window_on_layout(window, action_layout):
-        new_window = WindowApp.make_new_instance_of_class_from_object(window)
+    def update_window_on_layout(cur_window, action_layout):
+        new_window = WindowApp.make_new_instance_of_class_from_object(
+            cur_window
+        )
         action_layout.addWidget(new_window)
-        WindowApp.close_window(window)
+        WindowApp.close_window(cur_window)
 
-    # Создает экземпляр класса, как и object
-    # object должен иметь полем класса args - аргументы конструктора
+    # Создает новый объект, копируя аргументы конструктора старого объекта
     @staticmethod
     def make_new_instance_of_class_from_object(object):
-        new_object = globals()[object.__class__.__name__](*object.args)
+        args = inspect.signature(object.__init__).parameters.values()
+        arg_values = [getattr(object, arg.name) for arg in args]
+        new_object = globals()[object.__class__.__name__](*arg_values)
         return new_object
 
 
@@ -522,11 +526,6 @@ class WindowNodeWeb(QDialog):
         for group in self.hostgroups:
             print(group['groupid'], group['name'])
 
-        # Список аргументов конструктора при создании объекта
-        # Очередность та же, что и в конструкторе
-        # (Не нашел хорошей замены в python)
-        self.args = [zabbix, action_layout, window_menu]
-
         # API zabbix в сессии
         self.zabbix = zabbix
         # Текущий центральный лайаут, куда добавляются окна
@@ -837,7 +836,7 @@ class WindowItems(QDialog):
     # Функция выполняет возврат обратно к окну хостов
     def return_button_clicked(self):
         window_hosts = WindowNodeWeb(
-            self.zabbix, self.action_layout
+            self.zabbix, self.action_layout, self.window_menu
         )
         self.window_menu.cur_action_window = window_hosts
         self.action_layout.addWidget(window_hosts)
@@ -947,7 +946,7 @@ class WindowTriggers(QDialog):
     # Функция выполняет возврат обратно к окну хостов
     def return_button_clicked(self):
         window_hosts = WindowNodeWeb(
-            self.zabbix, self.action_layout
+            self.zabbix, self.action_layout, self.window_menu
         )
         self.window_menu.cur_action_window = window_hosts
         self.action_layout.addWidget(window_hosts)
