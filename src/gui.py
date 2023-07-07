@@ -318,6 +318,7 @@ class WindowMenu(QDialog):
         button_account.setIcon(QIcon("res/icon/user.svg"))
         # Задаем размер
         button_account.setIconSize(QSize(48, 48))
+        button_account.clicked.connect(self.delete_update_button)
         button_account.clicked.connect(
             lambda: self.button_clicked(
                 button_account
@@ -335,6 +336,7 @@ class WindowMenu(QDialog):
         button_settings.setObjectName("quick_buttons")
         button_settings.setIcon(QIcon("res/icon/settings.svg"))
         button_settings.setIconSize(QSize(48, 48))
+        button_settings.clicked.connect(self.delete_update_button)
         button_settings.clicked.connect(
             lambda: self.button_clicked(
                 button_settings
@@ -352,6 +354,7 @@ class WindowMenu(QDialog):
         button_logout.setObjectName("quick_buttons")
         button_logout.setIcon(QIcon('res/icon/logout.svg'))
         button_logout.setIconSize(QSize(48, 48))
+        button_logout.clicked.connect(self.delete_update_button)
         button_logout.clicked.connect(
             lambda: self.button_clicked(
                 button_logout
@@ -420,12 +423,18 @@ class WindowMenu(QDialog):
         # нажатое
         button.setEnabled(False)
 
-    # Метод для добавления кнопки обновления (аналогичен button_clicked)
-    def add_update_button(self, button_layout):
+    # Метод удаления кнопки обновления
+    def delete_update_button(self):
         for layout in self.buttons_layouts:
             if layout.indexOf(self.update_button) != -1:
                 layout.removeWidget(self.update_button)
+                self.update_button.setVisible(False)
+
+    # Метод для добавления кнопки обновления (аналогичен button_clicked)
+    def add_update_button(self, button_layout):
+        self.delete_update_button()
         button_layout.addWidget(self.update_button)
+        self.update_button.setVisible(True)
 
 
 class WindowAccount(QDialog):
