@@ -316,7 +316,7 @@ class WindowMenu(QDialog):
         button_account.setIcon(QIcon("res/icon/user.svg"))
         # Задаем размер
         button_account.setIconSize(QSize(48, 48))
-        button_account.clicked.connect(lambda: self.delete_update_button())
+        button_account.clicked.connect(self.delete_update_button)
         button_account.clicked.connect(
             lambda: self.button_clicked(
                 button_account
@@ -334,7 +334,7 @@ class WindowMenu(QDialog):
         button_settings.setObjectName("quick_buttons")
         button_settings.setIcon(QIcon("res/icon/settings.svg"))
         button_settings.setIconSize(QSize(48, 48))
-        button_settings.clicked.connect(lambda: self.delete_update_button())
+        button_settings.clicked.connect(self.delete_update_button)
         button_settings.clicked.connect(
             lambda: self.button_clicked(
                 button_settings
