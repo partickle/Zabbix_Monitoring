@@ -14,7 +14,8 @@ class Triggers:
         self.triggers = zabbix.trigger.get(
             hostids=self.hosts,
             output=['triggerid', 'description', 'expression'],
-            selectHosts=['host', 'hostid']
+            selectHosts=['host', 'hostid'],
+            expandExpression=True
         )
 
     # Метод обращается к полю класса с информацией и
@@ -33,29 +34,22 @@ class Triggers:
                 triggers_of_host.append(trigger_of_host)
         return triggers_of_host
 
-    # Метод добавляет хост с указанными параметрами
-    def add_host(self, host_name, host_ip):
-        self.zabbix.host.create(
-            host=host_name,
-            interfaces={
-                "type": 1,
-                "main": 1,
-                "useip": 1,
-                "ip": host_ip,
-                "dns": "",
-                "port": "10050"
-            },
-            groups={"groupid": "23"}
+    # Метод добавляет триггер с указанными параметрами
+    def add_trigger(self, description, expression, priority):
+        self.zabbix.trigger.create(
+            description=description,
+            expression=expression,
+            priority=priority
         )
 
-    # Метод отправляет запрос на удаление хостов,
-    # указанных в словаре как true, по ключу hostid
-    def delete_hosts(self, hostids_maybe_checked):
-        hostids_to_delete = []
+    # Метод отправляет запрос на удаление триггеров,
+    # указанных в словаре как true, по ключу triggerid
+    def delete_triggers(self, triggerids_maybe_checked):
+        triggerids_to_delete = []
         # Проходим по всем ключам словаря
-        for hostid in hostids_maybe_checked:
-            # Проверяем состояние hostid
-            if hostids_maybe_checked[hostid]:
-                hostids_to_delete.append(hostid)
+        for triggerid in triggerids_maybe_checked:
+            # Проверяем состояние triggerid
+            if triggerids_maybe_checked[triggerid]:
+                triggerids_to_delete.append(triggerid)
         # * нужно, чтобы распаковать список как множество аргументов
-        self.zabbix.host.delete(*hostids_to_delete)
+        self.zabbix.trigger.delete(*triggerids_to_delete)
