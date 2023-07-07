@@ -1052,7 +1052,7 @@ class WindowItems(QDialog):
                 .layout().itemAt(2).widget().text()
             itemids_maybe_checked[key] = value
         self.items.delete_items(itemids_maybe_checked)
-        WindowApp.update_window_on_layout(self, self.action_layout)
+        WindowApp.update_window_on_layout(self.window_menu, self.action_layout)
 
 
 # Класс окна добавления нового элемента данных
@@ -1275,7 +1275,7 @@ class WindowTriggers(QDialog):
                 .layout().itemAt(2).widget().text()
             triggerids_maybe_checked[key] = value
         self.triggers.delete_triggers(triggerids_maybe_checked)
-        WindowApp.update_window_on_layout(self, self.action_layout)
+        WindowApp.update_window_on_layout(self.window_menu, self.action_layout)
 
 
 # Класс окна добавления нового триггера
