@@ -810,33 +810,33 @@ class WindowNodeWeb(QDialog):
     # что позволяет корректно привязывать обработку событий
     def items_button_clicked(self, host):
         def button_clicked():
+            WindowApp.close_window(self)
             window_items = WindowItems(
                 self.zabbix, self.action_layout, self.window_menu, host
             )
             self.window_menu.cur_action_window = window_items
             self.action_layout.addWidget(window_items)
-            WindowApp.close_window(self)
         return button_clicked
 
     # Функция обработки события нажатия на триггеры хоста
     def triggers_button_clicked(self, host):
         def button_clicked():
+            WindowApp.close_window(self)
             window_triggers = WindowTriggers(
                 self.zabbix, self.action_layout, self.window_menu, host
             )
             self.window_menu.cur_action_window = window_triggers
             self.action_layout.addWidget(window_triggers)
-            WindowApp.close_window(self)
         return button_clicked
 
     # Функция открытия окна добавления хоста по нажатию на кнопку
     def add_host_button_clicked(self):
+        WindowApp.close_window(self)
         window_add_host = WindowAddHost(
             self.zabbix, self.action_layout, self.window_menu
         )
         self.window_menu.cur_action_window = window_add_host
         self.action_layout.addWidget(window_add_host)
-        WindowApp.close_window(self)
 
     # Функция удаления хостов, которым установлена галочка в чекбоксе
     def delete_chosen_hosts_button_clicked(self):
@@ -903,12 +903,12 @@ class WindowAddHost(QDialog):
 
     # Функция выполняет возврат обратно к окну хостов
     def return_button_clicked(self):
+        WindowApp.close_window(self)
         window_hosts = WindowNodeWeb(
             self.zabbix, self.action_layout, self.window_menu
         )
         self.window_menu.cur_action_window = window_hosts
         self.action_layout.addWidget(window_hosts)
-        WindowApp.close_window(self)
 
     # Добавление хоста и возврат к окну хостов
     def host_create_button_clicked(self):
@@ -1024,21 +1024,21 @@ class WindowItems(QDialog):
 
     # Функция выполняет возврат обратно к окну хостов
     def return_button_clicked(self):
+        WindowApp.close_window(self)
         window_hosts = WindowNodeWeb(
             self.zabbix, self.action_layout, self.window_menu
         )
         self.window_menu.cur_action_window = window_hosts
         self.action_layout.addWidget(window_hosts)
-        WindowApp.close_window(self)
 
     # Функция открытия окна добавления элемента данных по нажатию на кнопку
     def add_item_button_clicked(self):
+        WindowApp.close_window(self)
         window_add_item = WindowAddItem(
             self.zabbix, self.action_layout, self.window_menu, self.host
         )
         self.window_menu.cur_action_window = window_add_item
         self.action_layout.addWidget(window_add_item)
-        WindowApp.close_window(self)
 
     # Функция удаления элементов данных, которым установлена галочка в чекбоксе
     def delete_chosen_items_button_clicked(self):
@@ -1121,12 +1121,12 @@ class WindowAddItem(QDialog):
 
     # Функция выполняет возврат обратно к окну элементов данных
     def return_button_clicked(self):
+        WindowApp.close_window(self)
         window_items = WindowItems(
             self.zabbix, self.action_layout, self.window_menu, self.host
         )
         self.window_menu.cur_action_window = window_items
         self.action_layout.addWidget(window_items)
-        WindowApp.close_window(self)
 
     # Добавление элемента данных и возврат к окну элементов данных
     def item_create_button_clicked(self):
@@ -1247,21 +1247,21 @@ class WindowTriggers(QDialog):
 
     # Функция выполняет возврат обратно к окну хостов
     def return_button_clicked(self):
+        WindowApp.close_window(self)
         window_hosts = WindowNodeWeb(
             self.zabbix, self.action_layout, self.window_menu
         )
         self.window_menu.cur_action_window = window_hosts
         self.action_layout.addWidget(window_hosts)
-        WindowApp.close_window(self)
 
     # Функция открытия окна добавления триггера по нажатию на кнопку
     def add_trigger_button_clicked(self):
+        WindowApp.close_window(self)
         window_add_trigger = WindowAddTrigger(
             self.zabbix, self.action_layout, self.window_menu, self.host
         )
         self.window_menu.cur_action_window = window_add_trigger
         self.action_layout.addWidget(window_add_trigger)
-        WindowApp.close_window(self)
 
     # Функция удаления триггеров, которым установлена галочка в чекбоксе
     def delete_chosen_triggers_button_clicked(self):
@@ -1337,12 +1337,12 @@ class WindowAddTrigger(QDialog):
 
     # Функция выполняет возврат обратно к окну триггеров
     def return_button_clicked(self):
+        WindowApp.close_window(self)
         window_triggers = WindowTriggers(
             self.zabbix, self.action_layout, self.window_menu, self.host
         )
         self.window_menu.cur_action_window = window_triggers
         self.action_layout.addWidget(window_triggers)
-        WindowApp.close_window(self)
 
     # Добавление хоста и возврат к окну хостов
     def trigger_create_button_clicked(self):
