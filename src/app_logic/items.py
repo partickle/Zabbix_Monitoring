@@ -29,3 +29,28 @@ class Items:
                 }
                 items_of_host.append(item_of_host)
         return items_of_host
+
+    # Метод добавляет элемент данных с указанными параметрами
+    def add_item(self, hostid, interfaceid, item_name,
+                 key, type, value_type, delay_in_s):
+        self.zabbix.item.create(
+            hostid=hostid,
+            interfaceid=interfaceid,
+            name=item_name,
+            key_=key,
+            type=type,
+            value_type=value_type,
+            delay=delay_in_s
+        )
+
+    # Метод отправляет запрос на удаление элементов данных,
+    # указанных в словаре как true, по ключу itemid
+    def delete_items(self, itemids_maybe_checked):
+        itemids_to_delete = []
+        # Проходим по всем ключам словаря
+        for itemid in itemids_maybe_checked:
+            # Проверяем состояние itemid
+            if itemids_maybe_checked[itemid]:
+                itemids_to_delete.append(itemid)
+        # * нужно, чтобы распаковать список как множество аргументов
+        self.zabbix.item.delete(*itemids_to_delete)

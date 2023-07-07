@@ -14,7 +14,8 @@ class Triggers:
         self.triggers = zabbix.trigger.get(
             hostids=self.hosts,
             output=['triggerid', 'description', 'expression'],
-            selectHosts=['host', 'hostid']
+            selectHosts=['host', 'hostid'],
+            expandExpression=True
         )
 
     # Метод обращается к полю класса с информацией и
@@ -32,3 +33,23 @@ class Triggers:
                 }
                 triggers_of_host.append(trigger_of_host)
         return triggers_of_host
+
+    # Метод добавляет триггер с указанными параметрами
+    def add_trigger(self, description, expression, priority):
+        self.zabbix.trigger.create(
+            description=description,
+            expression=expression,
+            priority=priority
+        )
+
+    # Метод отправляет запрос на удаление триггеров,
+    # указанных в словаре как true, по ключу triggerid
+    def delete_triggers(self, triggerids_maybe_checked):
+        triggerids_to_delete = []
+        # Проходим по всем ключам словаря
+        for triggerid in triggerids_maybe_checked:
+            # Проверяем состояние triggerid
+            if triggerids_maybe_checked[triggerid]:
+                triggerids_to_delete.append(triggerid)
+        # * нужно, чтобы распаковать список как множество аргументов
+        self.zabbix.trigger.delete(*triggerids_to_delete)
