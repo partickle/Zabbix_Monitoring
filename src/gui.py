@@ -180,12 +180,13 @@ class WindowApp(QDialog):
 
     # Метод обновления окна
     @staticmethod
-    def update_window_on_layout(cur_window, action_layout):
+    def update_window_on_layout(window_menu, action_layout):
         new_window = WindowApp.make_new_instance_of_class_from_object(
-            cur_window
+            window_menu.cur_action_window
         )
+        WindowApp.close_window(window_menu.cur_action_window)
         action_layout.addWidget(new_window)
-        WindowApp.close_window(cur_window)
+        window_menu.cur_action_window = new_window
 
     # Создает новый объект, копируя аргументы конструктора старого объекта
     @staticmethod
@@ -231,43 +232,79 @@ class WindowMenu(QDialog):
         menu_layout.setContentsMargins(0, 0, 0, 0)
         menu_layout.setSpacing(0)
 
+        # Создаем массив с лайаутами
+        self.buttons_layouts = []
+
+        # Создаем лайауты под кнопки для добавления кнопки-обновления
+        node_web_layout = QHBoxLayout()
+        users_layout = QHBoxLayout()
+        problems_layout = QHBoxLayout()
+
+        # Добавляем их в массив
+        self.buttons_layouts.append(node_web_layout)
+        self.buttons_layouts.append(users_layout)
+        self.buttons_layouts.append(problems_layout)
+
+        # Добавляем их на меню
+        menu_layout.addLayout(node_web_layout)
+        menu_layout.addLayout(users_layout)
+        menu_layout.addLayout(problems_layout)
+
         # Создаем массив с кнопками
         self.buttons_menu = []
+
+        # Создаем кнопку обновления
+        self.update_button = QPushButton()
+        self.update_button.setFixedSize(50, 64)
+        self.update_button.setObjectName("update")
+        self.update_button.clicked.connect(
+            lambda: WindowApp.update_window_on_layout(
+                self, self.action_layout
+            )
+        )
 
         # Создаем кнопки и добавляем их в массив
         button_node_web = QPushButton("Узлы сети")
         self.buttons_menu.append(button_node_web)
-
         # Для каждой кнопки подключаем сигнал clicked к слоту button_clicked
         button_node_web.clicked.connect(
-            lambda: self.button_clicked(
-                button_node_web
-            )
+            lambda: self.button_clicked(button_node_web)
         )
-
         button_node_web.clicked.connect(
-            lambda: self.open_window_action(
-                "window_node_web"
-            )
+            lambda: self.add_update_button(node_web_layout)
+        )
+        button_node_web.clicked.connect(
+            lambda: self.open_window_action("window_node_web")
         )
 
         button_users = QPushButton("Пользователи")
         self.buttons_menu.append(button_users)
-
         button_users.clicked.connect(
-            lambda: self.button_clicked(
-                button_users
-            )
+            lambda: self.button_clicked(button_users)
+        )
+        button_users.clicked.connect(
+            lambda: self.add_update_button(users_layout)
+        )
+        button_users.clicked.connect(
+            lambda: self.open_window_action("window_users")
         )
 
-        button_users.clicked.connect(
-            lambda: self.open_window_action(
-                "window_users"
-            )
+        button_problems = QPushButton("Проблемы")
+        self.buttons_menu.append(button_problems)
+        # Для каждой кнопки подключаем сигнал clicked к слоту button_clicked
+        button_problems.clicked.connect(
+            lambda: self.button_clicked(button_problems)
+        )
+        button_problems.clicked.connect(
+            lambda: self.add_update_button(problems_layout)
+        )
+        button_problems.clicked.connect(
+            lambda: self.open_window_action("window_problems")
         )
 
-        menu_layout.addWidget(button_node_web)
-        menu_layout.addWidget(button_users)
+        node_web_layout.addWidget(button_node_web)
+        users_layout.addWidget(button_users)
+        problems_layout.addWidget(button_problems)
 
         # Создаем лайаут с быстрым меню
         quick_layout = QHBoxLayout()
@@ -342,6 +379,11 @@ class WindowMenu(QDialog):
             window_users = WindowUsers(self.zabbix, self.action_layout)
             self.action_layout.addWidget(window_users)
             self.cur_action_window = window_users
+        elif name_window == "window_problems":
+            self.close_window_action()
+            window_problems = WindowProblems(self.zabbix, self.action_layout)
+            self.action_layout.addWidget(window_problems)
+            self.cur_action_window = window_problems
         elif name_window == "window_account":
             self.close_window_action()
             window_account = WindowAccount(self.zabbix)
@@ -377,6 +419,13 @@ class WindowMenu(QDialog):
         # Состояние текущей нажатой кнопки устанавливается во включенное и
         # нажатое
         button.setEnabled(False)
+
+    # Метод для добавления кнопки обновления (аналогичен button_clicked)
+    def add_update_button(self, button_layout):
+        for layout in self.buttons_layouts:
+            if layout.indexOf(self.update_button) != -1:
+                layout.removeWidget(self.update_button)
+        button_layout.addWidget(self.update_button)
 
 
 class WindowAccount(QDialog):
@@ -792,7 +841,7 @@ class WindowNodeWeb(QDialog):
                 .layout().itemAt(2).widget().text()
             hostids_maybe_checked[key] = value
         self.hosts.delete_hosts(hostids_maybe_checked)
-        WindowApp.update_window_on_layout(self, self.action_layout)
+        WindowApp.update_window_on_layout(self.window_menu, self.action_layout)
 
 
 # Класс окна добавления нового хоста
@@ -1303,6 +1352,17 @@ class WindowUsers(QDialog):
 
         self.setFixedSize(600, 700)
         self.setStyleSheet(open('res/styles/window_users.css').read())
+
+        self.zabbix = zabbix
+        self.action_layout = action_layout
+
+
+class WindowProblems(QDialog):
+    def __init__(self, zabbix, action_layout):
+        super().__init__()
+
+        self.setFixedSize(600, 700)
+        self.setStyleSheet(open('res/styles/window_problems.css').read())
 
         self.zabbix = zabbix
         self.action_layout = action_layout

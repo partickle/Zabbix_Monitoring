@@ -43,3 +43,21 @@ QPushButton:disabled#quick_buttons {
     color: #ffffff;
     margin-left: 0px;
 }
+
+QPushButton#update {
+    background-image: url("res/icon/update.svg");
+    background-position: center;
+    background-repeat: no-repeat;
+    background-color: #d7b4f0;
+    border: none;
+    border-radius: 0px;
+}
+
+QPushButton:hover#update {
+    background-image: url("res/icon/update_hover.svg");
+}
+
+QPushButton:pressed#update {
+    background-image: url("res/icon/update_pressed.svg");
+    margin-left: 0px;
+}
