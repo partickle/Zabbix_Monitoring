@@ -1525,23 +1525,23 @@ class WindowAddUser(QDialog):
         # Поля для заполнения
         self.user_username_field = QLineEdit()
         self.user_username_field.setPlaceholderText(
-            "username of the user"
+            "Задайте псевдоним пользователя"
         )
         self.user_password_field = QLineEdit()
         self.user_password_field.setPlaceholderText(
-            "password of the user"
+            "Задайте пароль пользователя"
         )
         self.user_role_id_field = QLineEdit()
         self.user_role_id_field.setPlaceholderText(
-            "role number: 1-user, 2-admin, 3-S-admin"
+            "Идентиф. роли: 1-пользователь, 2-админ, 3-супер-админ"
         )
         self.user_name_field = QLineEdit()
         self.user_name_field.setPlaceholderText(
-            "name of the user"
+            "Задайте имя пользователя"
         )
         self.user_surname_field = QLineEdit()
         self.user_surname_field.setPlaceholderText(
-            "surname of the user"
+            "Задайте фамилию пользователя"
         )
 
         # Кнопка добавления
