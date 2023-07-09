@@ -1317,11 +1317,21 @@ class WindowAddTrigger(QDialog):
         )
 
         # Поля для заполнения
-        self.trigger_name_field = QLineEdit("host ne ale")
+        self.trigger_name_field = QLineEdit()
+        self.trigger_name_field.setPlaceholderText(
+            "Задайте имя триггера"
+        )
         self.expression_field = QLineEdit(
             "nodata(/bladway-PC/agent.ping, 31s)=1"
         )
-        self.priority_field = QLineEdit("5")
+        self.expression_field.setPlaceholderText(
+            "Задайте выражение триггера"
+        )
+        self.priority_field = QLineEdit()
+        self.priority_field.setPlaceholderText(
+            "Приоритет триггера. \
+0-без класса, 1-инфо., 2-предупр., 3-сред., 4-высок., 5-проишеств."
+        )
 
         # Кнопка добавления
         trigger_create_button = QPushButton("Добавить")
