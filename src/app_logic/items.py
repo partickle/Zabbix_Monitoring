@@ -13,6 +13,24 @@ class Items:
             hostids=self.hosts,
             output=['itemid', 'name', 'key_', 'hostid']
         )
+        self.types_of_items = {
+            "Zabbix agent": "0", "Zabbix trapper": "2",
+            "Simple check": "3", "Zabbix internal": "5",
+            "Zabbix agent (active)": "7", "Web item": "9",
+            "External check": "10", "Database monitor": "11",
+            "IPMI agent": "12", "SSH agent": "13",
+            "TELNET agent": "14", "Calculated": "15",
+            "JMX agent": "16", "SNMP trap": "17",
+            "Dependent item": "18", "HTTP agent": "19",
+            "SNMP agent": "20", "Script": "21"
+        }
+        self.value_types_of_items = {
+            "Число с плавающей точкой": "0",
+            "Символ": "1",
+            "Лог": "2",
+            "Число без знака": "3",
+            "Текст": "4"
+        }
 
     # Метод обращается к полю класса с информацией и
     # возвращает только те элементы данных, которые принадлежат

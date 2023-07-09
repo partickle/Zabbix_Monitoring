@@ -6,7 +6,7 @@ from PyQt5.QtCore import Qt, QSize
 from PyQt5.QtGui import QIcon, QPixmap
 from PyQt5.QtWidgets import QApplication, QLabel, QVBoxLayout, QLineEdit, \
     QPushButton, QDialog, QMessageBox, QHBoxLayout, QScrollArea, QCheckBox, \
-    QWidget, QGridLayout
+    QWidget, QGridLayout, QComboBox
 
 from pyzabbix import ZabbixAPI, ZabbixAPIException
 from app_logic import Terminal, Hosts, Items, Triggers, Account, Settings, \
@@ -1107,16 +1107,19 @@ class WindowAddItem(QDialog):
         self.item_name_field.setPlaceholderText("Задайте имя элемента данных")
         self.key_field = QLineEdit()
         self.key_field.setPlaceholderText("Задайте ключ элемента данных")
-        self.type_field = QLineEdit()
-        self.type_field.setPlaceholderText(
-            "Задайте тип элемента: \
-0-Zabbix agent, 2-Zabbix trapper, 7-Zabbix agent (active)"
+
+        # Комбобокс с выбором типа элемента данных
+        self.type_field = QComboBox()
+        self.type_field.addItems(
+            [type for type in self.items.types_of_items]
         )
-        self.value_type_field = QLineEdit()
-        self.value_type_field.setPlaceholderText(
-            "Задайте тип возвр. значения: \
-0-число с плав. точкой, 1-символ, 2-лог, 3-число без знака, 4-текст"
+
+        # Комбобокс с выбором типа возвращаемого значения
+        self.value_type_field = QComboBox()
+        self.value_type_field.addItems(
+            [type for type in self.items.value_types_of_items]
         )
+
         self.delay_in_s_field = QLineEdit()
         self.delay_in_s_field.setPlaceholderText(
             "Задайте интервал проверки в секундах"
@@ -1155,8 +1158,12 @@ class WindowAddItem(QDialog):
             interfaces['interfaceid'],
             self.item_name_field.text(),
             self.key_field.text(),
-            self.type_field.text(),
-            self.value_type_field.text(),
+            self.items.types_of_items[
+                str(self.type_field.currentText())
+            ],
+            self.items.value_types_of_items[
+                str(self.value_type_field.currentText())
+            ],
             self.delay_in_s_field.text()
         )
         self.return_button_clicked()
