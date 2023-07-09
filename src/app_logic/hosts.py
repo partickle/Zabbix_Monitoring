@@ -6,6 +6,16 @@ class Hosts:
         self.zabbix = zabbix
         self.hosts_info = zabbix.host.get(output=['hostid', 'name', 'host'])
 
+        # Информация сервера, используется в настройке.
+        # Именно это убирает универсальность приложения.
+        # В будущем нужно бы доработать
+        roles = zabbix.role.get(output=['roleid', 'name'])
+        print(roles)
+        usergroups = zabbix.usergroup.get(output=['usrgrpid', 'name'])
+        print(usergroups)
+        hostgroups = zabbix.hostgroup.get(output=['groupid', 'name'])
+        print(hostgroups)
+
     # Метод возвращает список всех хостов, кроме серверного
     def get_hosts(self):
         hosts_to_show = []
