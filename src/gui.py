@@ -890,7 +890,13 @@ class WindowAddHost(QDialog):
 
         # Поля для заполнения
         self.host_name_field = QLineEdit()
+        self.host_name_field.setPlaceholderText(
+            "Задайте имя хоста"
+        )
         self.host_ip_field = QLineEdit()
+        self.host_ip_field.setPlaceholderText(
+            "Задайте ip хоста в сети"
+        )
 
         # Кнопка добавления
         host_create_button = QPushButton("Добавить")
