@@ -13,6 +13,8 @@ class Items:
             hostids=self.hosts,
             output=['itemid', 'name', 'key_', 'hostid']
         )
+        # Словарь соответствия выбранного текста типа элемента данных и
+        # текста команды для Zabbix API
         self.types_of_items = {
             "Zabbix agent": "0", "Zabbix trapper": "2",
             "Simple check": "3", "Zabbix internal": "5",
@@ -24,6 +26,8 @@ class Items:
             "Dependent item": "18", "HTTP agent": "19",
             "SNMP agent": "20", "Script": "21"
         }
+        # Словарь соответствия выбранного текста типа возвращаемого значения и
+        # текста команды для Zabbix API
         self.value_types_of_items = {
             "Число с плавающей точкой": "0",
             "Символ": "1",

@@ -1351,10 +1351,11 @@ class WindowAddTrigger(QDialog):
         self.expression_field.setPlaceholderText(
             "Задайте выражение триггера"
         )
-        self.priority_field = QLineEdit()
-        self.priority_field.setPlaceholderText(
-            "Приоритет триггера: \
-0-без класса, 1-инфо., 2-предупр., 3-сред., 4-высок., 5-проишеств."
+
+        # Комбобокс с выбором важности триггера
+        self.priority_field = QComboBox()
+        self.priority_field.addItems(
+            [priority for priority in self.triggers.priorities_of_triggers]
         )
 
         # Кнопка добавления
@@ -1385,7 +1386,9 @@ class WindowAddTrigger(QDialog):
         self.triggers.add_trigger(
             self.trigger_name_field.text(),
             self.expression_field.text(),
-            self.priority_field.text()
+            self.triggers.priorities_of_triggers[
+                str(self.priority_field.currentText())
+            ]
         )
         self.return_button_clicked()
 
