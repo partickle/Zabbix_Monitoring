@@ -1097,13 +1097,24 @@ class WindowAddItem(QDialog):
         )
 
         # Поля для заполнения
-        self.item_name_field = QLineEdit("pinging")
-        # self.item_name_field.setPlaceholderText("Имя нового элемента данных")
-        self.key_field = QLineEdit("agent.ping")
-        # self.key_field.setPlaceholderText("Ключ элемента данных")
-        self.type_field = QLineEdit("0")
-        self.value_type_field = QLineEdit("3")
-        self.delay_in_s_field = QLineEdit("30")
+        self.item_name_field = QLineEdit()
+        self.item_name_field.setPlaceholderText("Задайте имя элемента данных")
+        self.key_field = QLineEdit()
+        self.key_field.setPlaceholderText("Задайте ключ элемента данных")
+        self.type_field = QLineEdit()
+        self.type_field.setPlaceholderText(
+            "Задайте тип элемента: \
+0-Zabbix agent, 2-Zabbix trapper, 7-Zabbix agent (active)"
+        )
+        self.value_type_field = QLineEdit()
+        self.value_type_field.setPlaceholderText(
+            "Задайте тип возвр. значения: \
+0-число с плав. точкой, 1-символ, 2-лог, 3-число без знака, 4-текст"
+        )
+        self.delay_in_s_field = QLineEdit()
+        self.delay_in_s_field.setPlaceholderText(
+            "Задайте интервал проверки в секундах"
+        )
 
         # Кнопка добавления
         item_create_button = QPushButton("Добавить")
@@ -1329,7 +1340,7 @@ class WindowAddTrigger(QDialog):
         )
         self.priority_field = QLineEdit()
         self.priority_field.setPlaceholderText(
-            "Приоритет триггера. \
+            "Приоритет триггера: \
 0-без класса, 1-инфо., 2-предупр., 3-сред., 4-высок., 5-проишеств."
         )
 
