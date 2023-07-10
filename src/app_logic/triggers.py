@@ -4,15 +4,11 @@ class Triggers:
         # При его инициализации посылается запрос к api zabbix
         # И информация сохраняется в поле класса
         self.zabbix = zabbix
-        # Делаем запрос на хосты
-        self.hosts_info = zabbix.host.get(output=['hostid', 'name', 'host'])
-        # Получаем чистый список всех hostid
-        self.hosts = [host['hostid'] for host in self.hosts_info]
+
         # Получаем все триггеры, связанные со всеми хостами
         # (для получения в ответе у каждого триггера id его хоста используется
         # параметр selectHosts)
         self.triggers = zabbix.trigger.get(
-            hostids=self.hosts,
             output=['triggerid', 'description', 'expression'],
             selectHosts=['host', 'hostid'],
             expandExpression=True
@@ -53,3 +49,9 @@ class Triggers:
                 triggerids_to_delete.append(triggerid)
         # * нужно, чтобы распаковать список как множество аргументов
         self.zabbix.trigger.delete(*triggerids_to_delete)
+
+    def get_host_name_by_triggerid(self, objectid):
+        for trigger in self.triggers:
+            if trigger.get('triggerid') == objectid:
+                return trigger['hosts'][0]['host']
+        return 'Not found'

@@ -10,5 +10,6 @@ QLabel {
 }
 
 QScrollArea {
-    background-color: #00000000
+    background-color: #00000000;
+    border: none;
 }

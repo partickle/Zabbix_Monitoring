@@ -10,7 +10,7 @@ from PyQt5.QtWidgets import QApplication, QLabel, QVBoxLayout, QLineEdit, \
 
 from pyzabbix import ZabbixAPI, ZabbixAPIException
 from app_logic import Terminal, Hosts, Items, Triggers, Account, Settings, \
-    Interfaces, Login
+    Interfaces, Login, Problems
 
 
 # Класс окна с авторизацией
@@ -1370,11 +1370,160 @@ class WindowProblems(QDialog):
     def __init__(self, zabbix, action_layout):
         super().__init__()
 
+        self.action_layout = action_layout
+        self.zabbix = zabbix
+
+        self.problems_logic = Problems(zabbix)
+        self.triggers_logic = Triggers(zabbix)
+
         self.setFixedSize(600, 700)
         self.setStyleSheet(open('res/styles/window_problems.css').read())
 
-        self.zabbix = zabbix
-        self.action_layout = action_layout
+        scroll_pane = QScrollArea(self)
+        scroll_pane.setContentsMargins(0, 0, 0, 0)
+        scroll_pane.setFixedSize(600, 700)
+        scroll_pane.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        scroll_pane.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        scroll_pane.setWidgetResizable(True)
+
+        scroll_widget = QWidget()
+        scroll_widget.setContentsMargins(0, 0, 0, 0)
+
+        self.scroll_layout = QVBoxLayout()
+        self.scroll_layout.setContentsMargins(0, 0, 0, 0)
+        self.scroll_layout.setSpacing(0)
+        self.scroll_layout.setAlignment(Qt.AlignTop)
+
+        self.add_explain_layout()
+
+        for index, problem in enumerate(self.problems_logic.get_data()):
+            self.add_problem_layout(index, problem)
+
+        scroll_pane.setWidget(scroll_widget)
+        scroll_widget.setLayout(self.scroll_layout)
+
+    def add_explain_layout(self):
+        explain_layout = QHBoxLayout()
+        explain_layout.setSpacing(0)
+        explain_layout.setContentsMargins(0, 0, 0, 0)
+
+        time_label = QLabel("Время")
+        time_label.setFixedSize(80, 60)
+        time_label.setAlignment(Qt.AlignCenter)
+        time_label.setObjectName("explain")
+
+        severity_label = QLabel("Важность")
+        severity_label.setFixedSize(95, 60)
+        severity_label.setAlignment(Qt.AlignCenter)
+        severity_label.setObjectName("explain")
+
+        host_name_label = QLabel("Узел сети")
+        host_name_label.setFixedSize(95, 60)
+        host_name_label.setAlignment(Qt.AlignCenter)
+        host_name_label.setObjectName("explain")
+
+        name_label = QLabel("Проблема")
+        name_label.setFixedSize(200, 60)
+        name_label.setAlignment(Qt.AlignCenter)
+        name_label.setObjectName("explain")
+
+        tags_label = QLabel("Теги")
+        tags_label.setFixedSize(130, 60)
+        tags_label.setAlignment(Qt.AlignCenter)
+        tags_label.setObjectName("explain")
+
+        explain_layout.addWidget(time_label)
+        explain_layout.addWidget(severity_label)
+        explain_layout.addWidget(host_name_label)
+        explain_layout.addWidget(name_label)
+        explain_layout.addWidget(tags_label)
+
+        self.scroll_layout.addLayout(explain_layout)
+
+    def add_problem_layout(self, index, problem):
+        cur_problem_widget = QWidget()
+        cur_problem_widget.setContentsMargins(0, 0, 0, 0)
+        if index != 0 and index % 2 != 0:
+            cur_problem_widget.setObjectName("background")
+
+        cur_problem_layout = QHBoxLayout()
+        cur_problem_layout.setSpacing(0)
+        cur_problem_layout.setContentsMargins(0, 0, 0, 0)
+
+        time_label = QLabel(Problems.get_norm_data(int(problem.get('clock'))))
+        time_label.setFixedWidth(75)
+
+        severity_label = WindowProblems.create_severity_label(
+            problem['severity']
+        )
+        severity_label.setFixedWidth(100)
+
+        host_name_label = QLabel(
+            self.triggers_logic.get_host_name_by_triggerid(problem['objectid'])
+        )
+        host_name_label.setWordWrap(True)
+        host_name_label.setFixedWidth(85)
+        host_name_label.setContentsMargins(0, 0, 5, 0)
+
+        name_label = QLabel(problem.get('name'))
+        name_label.setWordWrap(True)
+        name_label.setFixedWidth(205)
+        name_label.adjustSize()
+
+        tags_scroll = QScrollArea()
+        tags_scroll.setFixedWidth(125)
+        tags_scroll.setFixedHeight(name_label.height() + 25)
+        tags_scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        tags_scroll.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        tags_scroll.setWidgetResizable(True)
+
+        tags_widget = QWidget()
+
+        tags_layout = QVBoxLayout()
+        tags_layout.setContentsMargins(0, 0, 0, 0)
+        tags_layout.setSpacing(2)
+        tags_layout.setAlignment(Qt.AlignTop)
+
+        tags_scroll.setWidget(tags_widget)
+        tags_widget.setLayout(tags_layout)
+
+        self.add_tags_label(problem, tags_layout)
+
+        cur_problem_layout.addWidget(time_label)
+        cur_problem_layout.addWidget(severity_label)
+        cur_problem_layout.addWidget(host_name_label)
+        cur_problem_layout.addWidget(name_label)
+        cur_problem_layout.addWidget(tags_scroll)
+
+        cur_problem_widget.setFixedHeight(name_label.height() + 30)
+        cur_problem_widget.setLayout(cur_problem_layout)
+        self.scroll_layout.addWidget(cur_problem_widget)
+
+    @staticmethod
+    def add_tags_label(problem, tags_layout):
+        for tag in problem.get('tags'):
+            tag_label = QLabel(tag.get('tag') + ": " + tag.get('value'))
+            tag_label.setAlignment(Qt.AlignLeft)
+            tag_label.setObjectName("tag")
+
+            tags_layout.addWidget(tag_label)
+
+    @staticmethod
+    def create_severity_label(severity):
+        data = {
+            '0': ["НЕ КЛАССИ-\nФИЦИРУЕТСЯ", "#dde0f2ff"],
+            '1': ["ИНФОРМАЦИЯ", "#dd54b8ff"],
+            '2': ["ПРЕДУПРЕЖДЕНИЕ", "#dd5754ff"],
+            '3': ["СРЕДНИЙ", "#ddfcff54"],
+            '4': ["ВЫСОКИЙ", "#ddff9a52"],
+            '5': ["КАТАСТРОФА", "#ddfc3f3f"],
+        }
+        severity_label = QLabel(data.get(severity)[0])
+        severity_label.setStyleSheet(
+            f"background-color: {data.get(severity)[1]}"
+        )
+        severity_label.setAlignment(Qt.AlignCenter)
+        return severity_label
 
 
 if __name__ == '__main__':

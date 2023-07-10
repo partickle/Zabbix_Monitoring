@@ -7,3 +7,4 @@ from app_logic.account import Account
 from app_logic.settings import Settings
 from app_logic.interfaces import Interfaces
 from app_logic.login import Login
+from app_logic.problems import Problems
