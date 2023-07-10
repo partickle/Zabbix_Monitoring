@@ -1148,13 +1148,13 @@ class WindowAddItem(QDialog):
         # Комбобокс с выбором типа элемента данных
         self.type_field = QComboBox()
         self.type_field.addItems(
-            [type for type in self.items.types_of_items]
+            [type_thing for type_thing in self.items.types_of_items]
         )
 
         # Комбобокс с выбором типа возвращаемого значения
         self.value_type_field = QComboBox()
         self.value_type_field.addItems(
-            [type for type in self.items.value_types_of_items]
+            [type_thing for type_thing in self.items.value_types_of_items]
         )
 
         self.delay_in_s_field = QLineEdit()
