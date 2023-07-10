@@ -4,13 +4,8 @@ class Interfaces:
         # При его инициализации посылается запрос к api zabbix
         # И информация сохраняется в поле класса
         self.zabbix = zabbix
-        # Делаем запрос на хосты
-        self.hosts_info = zabbix.host.get(output=['hostid', 'name', 'host'])
-        # Получаем чистый список всех hostid
-        self.hosts = [host['hostid'] for host in self.hosts_info]
         # Получаем интерфейсы всех хостов
         self.interfaces = zabbix.hostinterface.get(
-            hostids=self.hosts,
             output=['hostid', 'interfaceid']
         )
 

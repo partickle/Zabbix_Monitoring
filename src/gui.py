@@ -6,11 +6,11 @@ from PyQt5.QtCore import Qt, QSize
 from PyQt5.QtGui import QIcon, QPixmap
 from PyQt5.QtWidgets import QApplication, QLabel, QVBoxLayout, QLineEdit, \
     QPushButton, QDialog, QMessageBox, QHBoxLayout, QScrollArea, QCheckBox, \
-    QWidget, QGridLayout
+    QWidget, QGridLayout, QComboBox
 
 from pyzabbix import ZabbixAPI, ZabbixAPIException
 from app_logic import Terminal, Hosts, Items, Triggers, Account, Settings, \
-    Interfaces, Login
+    Interfaces, Login, Users, Hostgroups, Usrgrps, Roles
 
 
 # Класс окна с авторизацией
@@ -379,7 +379,9 @@ class WindowMenu(QDialog):
             self.cur_action_window = window_node_web
         elif name_window == "window_users":
             self.close_window_action()
-            window_users = WindowUsers(self.zabbix, self.action_layout)
+            window_users = WindowUsers(
+                self.zabbix, self.action_layout, self
+            )
             self.action_layout.addWidget(window_users)
             self.cur_action_window = window_users
         elif name_window == "window_problems":
@@ -740,25 +742,25 @@ class WindowNodeWeb(QDialog):
         # Для каждого хоста создается свой виджет и лайаут его
         # надписей и кнопок
         for host in hosts:
-            current_item_widget = QWidget()
-            current_item_layout = QHBoxLayout()
+            current_host_widget = QWidget()
+            current_host_layout = QHBoxLayout()
 
             is_selected_checkbox = QCheckBox()
-            current_item_layout.addWidget(is_selected_checkbox)
+            current_host_layout.addWidget(is_selected_checkbox)
 
-            current_item_name_label = QLabel()
-            current_item_name_label.setText(host['host'])
-            current_item_layout.addWidget(current_item_name_label)
+            current_host_name_label = QLabel()
+            current_host_name_label.setText(host['host'])
+            current_host_layout.addWidget(current_host_name_label)
 
-            current_item_key_label = QLabel()
-            current_item_key_label.setText(host['hostid'])
-            current_item_layout.addWidget(current_item_key_label)
+            current_host_id_label = QLabel()
+            current_host_id_label.setText(host['hostid'])
+            current_host_layout.addWidget(current_host_id_label)
 
             # Кнопка открытия окна элементов данных конкретного хоста
             current_host_items_button = QPushButton(
                 'items' + ' ' + str(len(self.items.get_items(host)))
             )
-            current_item_layout.addWidget(current_host_items_button)
+            current_host_layout.addWidget(current_host_items_button)
 
             # Очень странно, что код снизу(тоже закоменченный) уже работает,
             # а этот код - нет
@@ -780,13 +782,13 @@ class WindowNodeWeb(QDialog):
             current_host_triggers_button = QPushButton(
                 'triggers' + ' ' + str(len(self.triggers.get_triggers(host)))
             )
-            current_item_layout.addWidget(current_host_triggers_button)
+            current_host_layout.addWidget(current_host_triggers_button)
             current_host_triggers_button.clicked.connect(
                 self.triggers_button_clicked(host)
             )
 
-            current_item_widget.setLayout(current_item_layout)
-            self.main_window_hosts_layout.addWidget(current_item_widget)
+            current_host_widget.setLayout(current_host_layout)
+            self.main_window_hosts_layout.addWidget(current_host_widget)
 
         # Вложение всех элементов так, как указано при их создании
         main_window_scroll_widget.setLayout(self.main_window_hosts_layout)
@@ -864,6 +866,9 @@ class WindowAddHost(QDialog):
         # Создает экземпляр логики хостов
         self.hosts = Hosts(zabbix)
 
+        # Создаем экземпляр логики групп хостов
+        self.hostgroups = Hostgroups(zabbix)
+
         # API zabbix в сессии
         self.zabbix = zabbix
 
@@ -888,7 +893,28 @@ class WindowAddHost(QDialog):
 
         # Поля для заполнения
         self.host_name_field = QLineEdit()
+        self.host_name_field.setPlaceholderText(
+            "Задайте имя хоста"
+        )
+
+        # Лайаут для чекбоксов с группами
+        self.groups_checkboxes_layout = QVBoxLayout()
+        for hostgroup_name in self.hostgroups.ids_of_hostgroups:
+            # Подлайаут для каждой группы хостов с чекбоксом
+            cur_hostgroup_layout = QHBoxLayout()
+
+            cur_hostgroup_checkbox = QCheckBox()
+            cur_hostgroup_label = QLabel(hostgroup_name)
+
+            cur_hostgroup_layout.addWidget(cur_hostgroup_checkbox)
+            cur_hostgroup_layout.addWidget(cur_hostgroup_label)
+
+            self.groups_checkboxes_layout.addLayout(cur_hostgroup_layout)
+
         self.host_ip_field = QLineEdit()
+        self.host_ip_field.setPlaceholderText(
+            "Задайте ip хоста в сети"
+        )
 
         # Кнопка добавления
         host_create_button = QPushButton("Добавить")
@@ -898,6 +924,7 @@ class WindowAddHost(QDialog):
 
         root_vbox_layout.addWidget(return_button)
         root_vbox_layout.addWidget(self.host_name_field)
+        root_vbox_layout.addLayout(self.groups_checkboxes_layout)
         root_vbox_layout.addWidget(self.host_ip_field)
         root_vbox_layout.addWidget(host_create_button)
 
@@ -913,9 +940,27 @@ class WindowAddHost(QDialog):
     # Добавление хоста и возврат к окну хостов
     def host_create_button_clicked(self):
         self.hosts.add_host(
-            self.host_name_field.text(), self.host_ip_field.text()
+            self.host_name_field.text(),
+            self.host_ip_field.text(),
+            self.get_selected_group_ids()
         )
         self.return_button_clicked()
+
+    # Метод с помощью названий групп с форм получает их id
+    # и возвращает только те id групп, у которых установлен чекбокс
+    def get_selected_group_ids(self):
+        selected_group_ids = []
+        for i in range(self.groups_checkboxes_layout.count()):
+            cur_hostgroup_layout = self.groups_checkboxes_layout.itemAt(i) \
+                                   .layout()
+
+            if cur_hostgroup_layout.itemAt(0).widget().isChecked():
+                selected_group_ids.append(
+                    self.hostgroups.ids_of_hostgroups[
+                        cur_hostgroup_layout.itemAt(1).widget().text()
+                    ]
+                )
+        return selected_group_ids
 
 
 # Класс окна элементов данных конкретного хоста
@@ -1095,13 +1140,27 @@ class WindowAddItem(QDialog):
         )
 
         # Поля для заполнения
-        self.item_name_field = QLineEdit("pinging")
-        # self.item_name_field.setPlaceholderText("Имя нового элемента данных")
-        self.key_field = QLineEdit("agent.ping")
-        # self.key_field.setPlaceholderText("Ключ элемента данных")
-        self.type_field = QLineEdit("0")
-        self.value_type_field = QLineEdit("3")
-        self.delay_in_s_field = QLineEdit("30")
+        self.item_name_field = QLineEdit()
+        self.item_name_field.setPlaceholderText("Задайте имя элемента данных")
+        self.key_field = QLineEdit()
+        self.key_field.setPlaceholderText("Задайте ключ элемента данных")
+
+        # Комбобокс с выбором типа элемента данных
+        self.type_field = QComboBox()
+        self.type_field.addItems(
+            [type for type in self.items.types_of_items]
+        )
+
+        # Комбобокс с выбором типа возвращаемого значения
+        self.value_type_field = QComboBox()
+        self.value_type_field.addItems(
+            [type for type in self.items.value_types_of_items]
+        )
+
+        self.delay_in_s_field = QLineEdit()
+        self.delay_in_s_field.setPlaceholderText(
+            "Задайте интервал проверки в секундах"
+        )
 
         # Кнопка добавления
         item_create_button = QPushButton("Добавить")
@@ -1136,8 +1195,12 @@ class WindowAddItem(QDialog):
             interfaces['interfaceid'],
             self.item_name_field.text(),
             self.key_field.text(),
-            self.type_field.text(),
-            self.value_type_field.text(),
+            self.items.types_of_items[
+                str(self.type_field.currentText())
+            ],
+            self.items.value_types_of_items[
+                str(self.value_type_field.currentText())
+            ],
             self.delay_in_s_field.text()
         )
         self.return_button_clicked()
@@ -1315,11 +1378,22 @@ class WindowAddTrigger(QDialog):
         )
 
         # Поля для заполнения
-        self.trigger_name_field = QLineEdit("host ne ale")
+        self.trigger_name_field = QLineEdit()
+        self.trigger_name_field.setPlaceholderText(
+            "Задайте имя триггера"
+        )
         self.expression_field = QLineEdit(
             "nodata(/bladway-PC/agent.ping, 31s)=1"
         )
-        self.priority_field = QLineEdit("5")
+        self.expression_field.setPlaceholderText(
+            "Задайте выражение триггера"
+        )
+
+        # Комбобокс с выбором важности триггера
+        self.priority_field = QComboBox()
+        self.priority_field.addItems(
+            [priority for priority in self.triggers.priorities_of_triggers]
+        )
 
         # Кнопка добавления
         trigger_create_button = QPushButton("Добавить")
@@ -1344,26 +1418,274 @@ class WindowAddTrigger(QDialog):
         self.window_menu.cur_action_window = window_triggers
         self.action_layout.addWidget(window_triggers)
 
-    # Добавление хоста и возврат к окну хостов
+    # Добавление триггера и возврат к окну триггеров
     def trigger_create_button_clicked(self):
         self.triggers.add_trigger(
             self.trigger_name_field.text(),
             self.expression_field.text(),
-            self.priority_field.text()
+            self.triggers.priorities_of_triggers[
+                str(self.priority_field.currentText())
+            ]
         )
         self.return_button_clicked()
 
 
 # Класс активного окна с пользователями
 class WindowUsers(QDialog):
-    def __init__(self, zabbix, action_layout):
+    def __init__(self, zabbix, action_layout, window_menu):
         super().__init__()
 
         self.setFixedSize(600, 700)
         self.setStyleSheet(open('res/styles/window_users.css').read())
 
+        # Создаем экземпляр логики пользователей
+        self.users = Users(zabbix)
+
+        # API zabbix в сессии
         self.zabbix = zabbix
+
+        # Текущий центральный лайаут, куда добавляются окна
         self.action_layout = action_layout
+
+        # Ссылка на текущее открытое окно в центральном лайауте
+        self.window_menu = window_menu
+
+        # Основной лайаут - вертикальный
+        root_vbox_layout = QVBoxLayout(self)
+
+        # В основной лайаут добавится зона с прокруткой
+        main_window_scroll_area = QScrollArea()
+
+        # И панель с кнопками
+        panel_of_buttons_widget = QWidget()
+
+        # Отключаем горизонтальный скролл
+        main_window_scroll_area.setHorizontalScrollBarPolicy(
+            Qt.ScrollBarAlwaysOff
+        )
+        # Включаем динамическое масштабирование,
+        main_window_scroll_area.setWidgetResizable(
+            True
+        )
+
+        # Виджет, который вставится в scroll area
+        main_window_scroll_widget = QWidget()
+
+        # Лайаут панели с кнопками вставится в ее виджет
+        panel_of_buttons_layout = QHBoxLayout()
+
+        # Добавление кнопок в соответствующую панель
+        add_user_button = QPushButton("Add")
+        add_user_button.clicked.connect(
+            lambda: self.add_user_button_clicked()
+        )
+        delete_chosen_users_button = QPushButton("Delete")
+        delete_chosen_users_button.clicked.connect(
+            lambda: self.delete_chosen_users_button_clicked()
+        )
+
+        # Основной лайаут scroll area
+        self.main_window_users_layout = QGridLayout()
+
+        users = self.users.get_users()
+
+        # Для каждого пользователя создается свой виджет и лайаут его
+        # надписей и кнопок
+        for user in users:
+            current_user_widget = QWidget()
+            current_user_layout = QHBoxLayout()
+
+            is_selected_checkbox = QCheckBox()
+            current_user_layout.addWidget(is_selected_checkbox)
+
+            current_user_username_label = QLabel()
+            current_user_username_label.setText(user['username'])
+            current_user_layout.addWidget(current_user_username_label)
+
+            current_user_id_label = QLabel()
+            current_user_id_label.setText(user['userid'])
+            current_user_layout.addWidget(current_user_id_label)
+
+            current_user_role_id_label = QLabel()
+            current_user_role_id_label.setText(user['roleid'])
+            current_user_layout.addWidget(current_user_role_id_label)
+
+            current_user_name_label = QLabel()
+            current_user_name_label.setText(user['name'])
+            current_user_layout.addWidget(current_user_name_label)
+
+            current_user_surname_label = QLabel()
+            current_user_surname_label.setText(user['surname'])
+            current_user_layout.addWidget(current_user_surname_label)
+
+            current_user_widget.setLayout(current_user_layout)
+            self.main_window_users_layout.addWidget(current_user_widget)
+
+        # Вложение всех элементов так, как указано при их создании
+        main_window_scroll_widget.setLayout(self.main_window_users_layout)
+        panel_of_buttons_layout.addWidget(add_user_button)
+        panel_of_buttons_layout.addWidget(delete_chosen_users_button)
+        main_window_scroll_area.setWidget(main_window_scroll_widget)
+        panel_of_buttons_widget.setLayout(panel_of_buttons_layout)
+        root_vbox_layout.addWidget(main_window_scroll_area)
+        root_vbox_layout.addWidget(panel_of_buttons_widget)
+
+    # Функция открытия окна добавления пользователя по нажатию на кнопку
+    def add_user_button_clicked(self):
+        WindowApp.close_window(self)
+        window_add_user = WindowAddUser(
+            self.zabbix, self.action_layout, self.window_menu
+        )
+        self.window_menu.cur_action_window = window_add_user
+        self.action_layout.addWidget(window_add_user)
+
+    # Функция удаления хостов, которым установлена галочка в чекбоксе
+    def delete_chosen_users_button_clicked(self):
+        userids_maybe_checked = {}
+        for i in range(self.main_window_users_layout.rowCount()):
+            value = self.main_window_users_layout \
+                .itemAtPosition(i, 0).widget() \
+                .layout().itemAt(0).widget().isChecked()
+            key = self.main_window_users_layout \
+                .itemAtPosition(i, 0).widget() \
+                .layout().itemAt(2).widget().text()
+            userids_maybe_checked[key] = value
+        self.users.delete_users(userids_maybe_checked)
+        WindowApp.update_window_on_layout(self.window_menu, self.action_layout)
+
+
+class WindowAddUser(QDialog):
+    def __init__(self, zabbix, action_layout, window_menu):
+        super().__init__()
+
+        self.setFixedSize(600, 700)
+        self.setStyleSheet(open('res/styles/window_add_user.css').read())
+
+        # Создает экземпляр логики пользователей
+        self.users = Users(zabbix)
+
+        # Создает экземпляр логики ролей пользователей
+        self.roles = Roles(zabbix)
+
+        # Создает экземпляр логики групп пользователей
+        self.usrgrps = Usrgrps(zabbix)
+
+        # API zabbix в сессии
+        self.zabbix = zabbix
+
+        # Текущий центральный лайаут, куда добавляются окна
+        self.action_layout = action_layout
+
+        # Ссылка на текущее открытое окно в центральном лайауте
+        self.window_menu = window_menu
+
+        # Основной лайаут - вертикальный
+        root_vbox_layout = QVBoxLayout(self)
+
+        # Кнопка возврата к окну пользователей в основном лайауте
+        return_button = QPushButton()
+        return_button.setIcon(QIcon("res/icon/arrow_back.svg"))
+        return_button.setIconSize(QSize(50, 50))
+
+        # Привязка обработки события нажатия на нее
+        return_button.clicked.connect(
+            lambda: self.return_button_clicked()
+        )
+
+        # Поля для заполнения
+        self.user_username_field = QLineEdit()
+        self.user_username_field.setPlaceholderText(
+            "Задайте псевдоним пользователя"
+        )
+        self.user_password_field = QLineEdit()
+        self.user_password_field.setPlaceholderText(
+            "Задайте пароль пользователя"
+        )
+
+        # Комбобокс с выбором одной из существующих ролей
+        self.user_role_id_field = QComboBox()
+        self.user_role_id_field.addItems(
+            [role for role in self.roles.ids_of_roles]
+        )
+
+        # Лайаут для чекбоксов с группами
+        self.groups_checkboxes_layout = QVBoxLayout()
+        for usrgrp_name in self.usrgrps.ids_of_usrgrps:
+            # Подлайаут для каждой группы пользователей с чекбоксом
+            cur_usrgrp_layout = QHBoxLayout()
+
+            cur_usrgrp_checkbox = QCheckBox()
+            cur_usrgrp_label = QLabel(usrgrp_name)
+
+            cur_usrgrp_layout.addWidget(cur_usrgrp_checkbox)
+            cur_usrgrp_layout.addWidget(cur_usrgrp_label)
+
+            self.groups_checkboxes_layout.addLayout(cur_usrgrp_layout)
+
+        self.user_name_field = QLineEdit()
+        self.user_name_field.setPlaceholderText(
+            "Задайте имя пользователя"
+        )
+        self.user_surname_field = QLineEdit()
+        self.user_surname_field.setPlaceholderText(
+            "Задайте фамилию пользователя"
+        )
+
+        # Кнопка добавления
+        user_create_button = QPushButton("Добавить")
+        user_create_button.clicked.connect(
+            lambda: self.user_create_button_clicked()
+        )
+
+        root_vbox_layout.addWidget(return_button)
+
+        root_vbox_layout.addWidget(self.user_username_field)
+        root_vbox_layout.addWidget(self.user_password_field)
+        root_vbox_layout.addWidget(self.user_role_id_field)
+        root_vbox_layout.addLayout(self.groups_checkboxes_layout)
+        root_vbox_layout.addWidget(self.user_name_field)
+        root_vbox_layout.addWidget(self.user_surname_field)
+
+        root_vbox_layout.addWidget(user_create_button)
+
+    # Функция выполняет возврат обратно к окну пользователей
+    def return_button_clicked(self):
+        WindowApp.close_window(self)
+        window_users = WindowUsers(
+            self.zabbix, self.action_layout, self.window_menu
+        )
+        self.window_menu.cur_action_window = window_users
+        self.action_layout.addWidget(window_users)
+
+    # Добавление пользователя и возврат к окну пользователей
+    def user_create_button_clicked(self):
+        self.users.add_user(
+            self.user_username_field.text(),
+            self.user_password_field.text(),
+            self.roles.ids_of_roles[
+                str(self.user_role_id_field.currentText())
+            ],
+            self.user_name_field.text(),
+            self.user_surname_field.text(),
+            self.get_selected_group_ids()
+        )
+        self.return_button_clicked()
+
+    # Метод с помощью названий групп с форм получает их id
+    # и возвращает только те id групп, у которых установлен чекбокс
+    def get_selected_group_ids(self):
+        selected_group_ids = []
+        for i in range(self.groups_checkboxes_layout.count()):
+            cur_usrgrp_layout = self.groups_checkboxes_layout.itemAt(i) \
+                                   .layout()
+
+            if cur_usrgrp_layout.itemAt(0).widget().isChecked():
+                selected_group_ids.append(
+                    self.usrgrps.ids_of_usrgrps[
+                        cur_usrgrp_layout.itemAt(1).widget().text()
+                    ]
+                )
+        return selected_group_ids
 
 
 class WindowProblems(QDialog):

@@ -7,3 +7,7 @@ from app_logic.account import Account
 from app_logic.settings import Settings
 from app_logic.interfaces import Interfaces
 from app_logic.login import Login
+from app_logic.users import Users
+from app_logic.hostgroups import Hostgroups
+from app_logic.roles import Roles
+from app_logic.usrgrps import Usrgrps
