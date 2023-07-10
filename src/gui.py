@@ -10,7 +10,7 @@ from PyQt5.QtWidgets import QApplication, QLabel, QVBoxLayout, QLineEdit, \
 
 from pyzabbix import ZabbixAPI, ZabbixAPIException
 from app_logic import Terminal, Hosts, Items, Triggers, Account, Settings, \
-    Interfaces, Login, Users, Hostgroups
+    Interfaces, Login, Users, Hostgroups, Usrgrps, Roles
 
 
 # Класс окна с авторизацией
@@ -1564,6 +1564,12 @@ class WindowAddUser(QDialog):
         # Создает экземпляр логики пользователей
         self.users = Users(zabbix)
 
+        # Создает экземпляр логики ролей пользователей
+        self.roles = Roles(zabbix)
+
+        # Создает экземпляр логики групп пользователей
+        self.usrgrps = Usrgrps(zabbix)
+
         # API zabbix в сессии
         self.zabbix = zabbix
 
@@ -1595,10 +1601,27 @@ class WindowAddUser(QDialog):
         self.user_password_field.setPlaceholderText(
             "Задайте пароль пользователя"
         )
-        self.user_role_id_field = QLineEdit()
-        self.user_role_id_field.setPlaceholderText(
-            "Идентиф. роли: 1-пользователь, 2-админ, 3-супер-админ"
+
+        # Комбобокс с выбором одной из существующих ролей
+        self.user_role_id_field = QComboBox()
+        self.user_role_id_field.addItems(
+            [role for role in self.roles.ids_of_roles]
         )
+
+        # Лайаут для чекбоксов с группами
+        self.groups_checkboxes_layout = QVBoxLayout()
+        for usrgrp_name in self.usrgrps.ids_of_usrgrps:
+            # Подлайаут для каждой группы пользователей с чекбоксом
+            cur_usrgrp_layout = QHBoxLayout()
+
+            cur_usrgrp_checkbox = QCheckBox()
+            cur_usrgrp_label = QLabel(usrgrp_name)
+
+            cur_usrgrp_layout.addWidget(cur_usrgrp_checkbox)
+            cur_usrgrp_layout.addWidget(cur_usrgrp_label)
+
+            self.groups_checkboxes_layout.addLayout(cur_usrgrp_layout)
+
         self.user_name_field = QLineEdit()
         self.user_name_field.setPlaceholderText(
             "Задайте имя пользователя"
@@ -1619,6 +1642,7 @@ class WindowAddUser(QDialog):
         root_vbox_layout.addWidget(self.user_username_field)
         root_vbox_layout.addWidget(self.user_password_field)
         root_vbox_layout.addWidget(self.user_role_id_field)
+        root_vbox_layout.addLayout(self.groups_checkboxes_layout)
         root_vbox_layout.addWidget(self.user_name_field)
         root_vbox_layout.addWidget(self.user_surname_field)
 
@@ -1638,11 +1662,30 @@ class WindowAddUser(QDialog):
         self.users.add_user(
             self.user_username_field.text(),
             self.user_password_field.text(),
-            self.user_role_id_field.text(),
+            self.roles.ids_of_roles[
+                str(self.user_role_id_field.currentText())
+            ],
             self.user_name_field.text(),
-            self.user_surname_field.text()
+            self.user_surname_field.text(),
+            self.get_selected_group_ids()
         )
         self.return_button_clicked()
+
+    # Метод с помощью названий групп с форм получает их id
+    # и возвращает только те id групп, у которых установлен чекбокс
+    def get_selected_group_ids(self):
+        selected_group_ids = []
+        for i in range(self.groups_checkboxes_layout.count()):
+            cur_usrgrp_layout = self.groups_checkboxes_layout.itemAt(i) \
+                                   .layout()
+
+            if cur_usrgrp_layout.itemAt(0).widget().isChecked():
+                selected_group_ids.append(
+                    self.usrgrps.ids_of_usrgrps[
+                        cur_usrgrp_layout.itemAt(1).widget().text()
+                    ]
+                )
+        return selected_group_ids
 
 
 class WindowProblems(QDialog):

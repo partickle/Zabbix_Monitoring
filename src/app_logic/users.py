@@ -14,14 +14,15 @@ class Users:
 
     # Метод добавляет пользователя с указанными параметрами
     def add_user(self, username, password,
-                 role_id, name, surname):
+                 role_id, name, surname, usrgrpsids):
+        usrgrp = [{"usrgrpid": id} for id in usrgrpsids]
         self.zabbix.user.create(
             username=username,
             passwd=password,
-            roleid=role_id,  # Доработать
+            roleid=role_id,
             name=name,
             surname=surname,
-            usrgrps=[{"usrgrpid": "17"}]  # Доработать
+            usrgrps=usrgrp
         )
 
     # Метод отправляет запрос на удаление пользователей,
