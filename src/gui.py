@@ -10,7 +10,7 @@ from PyQt5.QtWidgets import QApplication, QLabel, QVBoxLayout, QLineEdit, \
 
 from pyzabbix import ZabbixAPI, ZabbixAPIException
 from app_logic import Terminal, Hosts, Items, Triggers, Account, Settings, \
-    Interfaces, Login, Users
+    Interfaces, Login, Users, Hostgroups
 
 
 # Класс окна с авторизацией
@@ -866,6 +866,9 @@ class WindowAddHost(QDialog):
         # Создает экземпляр логики хостов
         self.hosts = Hosts(zabbix)
 
+        # Создаем экземпляр логики групп хостов
+        self.hostgroups = Hostgroups(zabbix)
+
         # API zabbix в сессии
         self.zabbix = zabbix
 
@@ -893,6 +896,21 @@ class WindowAddHost(QDialog):
         self.host_name_field.setPlaceholderText(
             "Задайте имя хоста"
         )
+
+        # Лайаут для чекбоксов с группами
+        self.groups_checkboxes_layout = QVBoxLayout()
+        for hostgroup_name in self.hostgroups.ids_of_hostgroups:
+            # Подлайаут для каждой группы хостов с чекбоксом
+            cur_hostgroup_layout = QHBoxLayout()
+
+            cur_hostgroup_checkbox = QCheckBox()
+            cur_hostgroup_label = QLabel(hostgroup_name)
+
+            cur_hostgroup_layout.addWidget(cur_hostgroup_checkbox)
+            cur_hostgroup_layout.addWidget(cur_hostgroup_label)
+
+            self.groups_checkboxes_layout.addLayout(cur_hostgroup_layout)
+
         self.host_ip_field = QLineEdit()
         self.host_ip_field.setPlaceholderText(
             "Задайте ip хоста в сети"
@@ -906,6 +924,7 @@ class WindowAddHost(QDialog):
 
         root_vbox_layout.addWidget(return_button)
         root_vbox_layout.addWidget(self.host_name_field)
+        root_vbox_layout.addLayout(self.groups_checkboxes_layout)
         root_vbox_layout.addWidget(self.host_ip_field)
         root_vbox_layout.addWidget(host_create_button)
 
@@ -921,9 +940,27 @@ class WindowAddHost(QDialog):
     # Добавление хоста и возврат к окну хостов
     def host_create_button_clicked(self):
         self.hosts.add_host(
-            self.host_name_field.text(), self.host_ip_field.text()
+            self.host_name_field.text(),
+            self.host_ip_field.text(),
+            self.get_selected_group_ids()
         )
         self.return_button_clicked()
+
+    # Метод с помощью названий групп с форм получает их id
+    # и возвращает только те id групп, у которых установлен чекбокс
+    def get_selected_group_ids(self):
+        selected_group_ids = []
+        for i in range(self.groups_checkboxes_layout.count()):
+            cur_hostgroup_layout = self.groups_checkboxes_layout.itemAt(i) \
+                                   .layout()
+
+            if cur_hostgroup_layout.itemAt(0).widget().isChecked():
+                selected_group_ids.append(
+                    self.hostgroups.ids_of_hostgroups[
+                        cur_hostgroup_layout.itemAt(1).widget().text()
+                    ]
+                )
+        return selected_group_ids
 
 
 # Класс окна элементов данных конкретного хоста
@@ -1381,7 +1418,7 @@ class WindowAddTrigger(QDialog):
         self.window_menu.cur_action_window = window_triggers
         self.action_layout.addWidget(window_triggers)
 
-    # Добавление хоста и возврат к окну хостов
+    # Добавление триггера и возврат к окну триггеров
     def trigger_create_button_clicked(self):
         self.triggers.add_trigger(
             self.trigger_name_field.text(),

@@ -13,8 +13,11 @@ class Hosts:
         print(roles)
         usergroups = zabbix.usergroup.get(output=['usrgrpid', 'name'])
         print(usergroups)
-        hostgroups = zabbix.hostgroup.get(output=['groupid', 'name'])
-        print(hostgroups)
+        # Эта информация теперь универсальна для
+        # создания хостов в плане сервера,
+        # однако все еще нужно добавить группы хостов вкладку в приложение
+        # hostgroups = zabbix.hostgroup.get(output=['groupid', 'name'])
+        # print(hostgroups)
 
     # Метод возвращает список всех хостов, кроме серверного
     def get_hosts(self):
@@ -25,7 +28,8 @@ class Hosts:
         return hosts_to_show
 
     # Метод добавляет хост с указанными параметрами
-    def add_host(self, host_name, host_ip):
+    def add_host(self, host_name, host_ip, groupids):
+        groups = [{"groupid": id} for id in groupids]
         self.zabbix.host.create(
             host=host_name,
             interfaces={
@@ -36,7 +40,7 @@ class Hosts:
                 "dns": "",
                 "port": "10050"
             },
-            groups={"groupid": "23"}
+            groups=groups
         )
 
     # Метод отправляет запрос на удаление хостов,

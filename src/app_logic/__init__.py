@@ -8,3 +8,4 @@ from app_logic.settings import Settings
 from app_logic.interfaces import Interfaces
 from app_logic.login import Login
 from app_logic.users import Users
+from app_logic.hostgroups import Hostgroups

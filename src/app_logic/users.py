@@ -18,10 +18,10 @@ class Users:
         self.zabbix.user.create(
             username=username,
             passwd=password,
-            roleid=role_id,
+            roleid=role_id,  # Доработать
             name=name,
             surname=surname,
-            usrgrps=[{"usrgrpid": "17"}]
+            usrgrps=[{"usrgrpid": "17"}]  # Доработать
         )
 
     # Метод отправляет запрос на удаление пользователей,
