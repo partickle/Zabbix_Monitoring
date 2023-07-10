@@ -4,13 +4,8 @@ class Items:
         # При его инициализации посылается запрос к api zabbix
         # И информация сохраняется в поле класса
         self.zabbix = zabbix
-        # Делаем запрос на хосты
-        self.hosts_info = zabbix.host.get(output=['hostid', 'name', 'host'])
-        # Получаем чистый список всех hostid
-        self.hosts = [host['hostid'] for host in self.hosts_info]
         # Получаем все элементы данных связанные со всеми хостами
         self.items = zabbix.item.get(
-            hostids=self.hosts,
             output=['itemid', 'name', 'key_', 'hostid']
         )
         # Словарь соответствия выбранного текста типа элемента данных и
