@@ -443,8 +443,8 @@ class WindowAccount(QDialog):
     def __init__(self, zabbix):
         super().__init__()
 
-        # Создаем словарь с данными для того, чтобы не делать кучу запросов
-        self.user_data = Account.get_cur_user_data(zabbix)
+        # Создаем экземпляр логики окна
+        account_logic = Account(zabbix)
 
         self.setFixedSize(600, 700)
         self.setStyleSheet(open('res/styles/window_account.css').read())
@@ -456,10 +456,10 @@ class WindowAccount(QDialog):
         icon = QLabel()
         icon.setPixmap(QIcon("res/icon/user_account.svg").pixmap(150, 150))
 
-        name = QLabel(self.user_data.get('name'))
+        name = QLabel(account_logic.get_name())
         name.setObjectName("name")
 
-        surname = QLabel(self.user_data.get('surname'))
+        surname = QLabel(account_logic.get_surname())
         surname.setObjectName("name")
 
         username_label = QLabel("Логин: ")
@@ -468,8 +468,8 @@ class WindowAccount(QDialog):
         lang_label = QLabel("Язык: ")
         lang_label.setObjectName("label")
 
-        username = QLabel(self.user_data.get('username'))
-        lang = QLabel(self.user_data.get('lang'))
+        username = QLabel(account_logic.get_username())
+        lang = QLabel(account_logic.get_lang())
 
         # Создаем главный лайаут
         main_layout = QVBoxLayout(self)
@@ -1835,7 +1835,7 @@ class WindowProblems(QDialog):
         data = {
             '0': ["НЕ КЛАССИ-\nФИЦИРУЕТСЯ", "#dde0f2ff"],
             '1': ["ИНФОРМАЦИЯ", "#dd54b8ff"],
-            '2': ["ПРЕДУПРЕЖДЕНИЕ", "#dd5754ff"],
+            '2': ["ПРЕДУПРЕЖ-\nДЕНИЕ", "#dd5754ff"],
             '3': ["СРЕДНИЙ", "#ddfcff54"],
             '4': ["ВЫСОКИЙ", "#ddff9a52"],
             '5': ["КАТАСТРОФА", "#ddfc3f3f"],
