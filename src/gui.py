@@ -745,19 +745,23 @@ class WindowNodeWeb(QDialog):
         for index, host in enumerate(hosts):
             current_host_widget = QWidget()
             current_host_widget.setFixedHeight(60)
-            current_host_layout = QHBoxLayout()
 
             if index != 0 and index % 2 != 0:
                 current_host_widget.setObjectName("second")
 
+            current_host_layout = QHBoxLayout()
+
             is_selected_checkbox = QCheckBox()
+            is_selected_checkbox.setFixedWidth(40)
             current_host_layout.addWidget(is_selected_checkbox)
 
             current_host_name_label = QLabel()
+            current_host_name_label.setFixedWidth(190)
             current_host_name_label.setText(host['host'])
             current_host_layout.addWidget(current_host_name_label)
 
             current_host_id_label = QLabel()
+            current_host_id_label.setFixedWidth(70)
             current_host_id_label.setText(host['hostid'])
             current_host_layout.addWidget(current_host_id_label)
 
@@ -1477,6 +1481,7 @@ class WindowUsers(QDialog):
 
         # Виджет, который вставится в scroll area
         main_window_scroll_widget = QWidget()
+        main_window_scroll_widget.setObjectName("scroll")
 
         # Лайаут панели с кнопками вставится в ее виджет
         panel_of_buttons_layout = QHBoxLayout()
@@ -1493,35 +1498,47 @@ class WindowUsers(QDialog):
 
         # Основной лайаут scroll area
         self.main_window_users_layout = QGridLayout()
+        self.main_window_users_layout.setAlignment(Qt.AlignTop)
 
         users = self.users.get_users()
 
         # Для каждого пользователя создается свой виджет и лайаут его
         # надписей и кнопок
-        for user in users:
+        for index, user in enumerate(users):
             current_user_widget = QWidget()
+            current_user_widget.setFixedHeight(60)
+
+            if index != 0 and index % 2 != 0:
+                current_user_widget.setObjectName("second")
+
             current_user_layout = QHBoxLayout()
 
             is_selected_checkbox = QCheckBox()
+            is_selected_checkbox.setFixedWidth(40)
             current_user_layout.addWidget(is_selected_checkbox)
 
             current_user_username_label = QLabel()
+            current_user_username_label.setFixedWidth(150)
             current_user_username_label.setText(user['username'])
             current_user_layout.addWidget(current_user_username_label)
 
             current_user_id_label = QLabel()
+            current_user_id_label.setFixedWidth(50)
             current_user_id_label.setText(user['userid'])
             current_user_layout.addWidget(current_user_id_label)
 
             current_user_role_id_label = QLabel()
+            current_user_role_id_label.setFixedWidth(50)
             current_user_role_id_label.setText(user['roleid'])
             current_user_layout.addWidget(current_user_role_id_label)
 
             current_user_name_label = QLabel()
+            current_user_name_label.setFixedWidth(100)
             current_user_name_label.setText(user['name'])
             current_user_layout.addWidget(current_user_name_label)
 
             current_user_surname_label = QLabel()
+            current_user_surname_label.setFixedWidth(100)
             current_user_surname_label.setText(user['surname'])
             current_user_layout.addWidget(current_user_surname_label)
 
