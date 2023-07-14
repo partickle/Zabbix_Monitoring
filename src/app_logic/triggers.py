@@ -60,8 +60,12 @@ class Triggers:
         # * нужно, чтобы распаковать список как множество аргументов
         self.zabbix.trigger.delete(*triggerids_to_delete)
 
+    # Метод для поиска имени узла сети через id триггера
     def get_host_name_by_triggerid(self, objectid):
+        # Проходи циклом по массиву со словарями триггеров
         for trigger in self.triggers:
+            # Ищем совпадение и возвращаем его
             if trigger.get('triggerid') == objectid:
                 return trigger['hosts'][0]['host']
-        return 'Not found'
+        # Если такого хоста нет, то возвращаем следующую строку
+        return 'Нет хоста'

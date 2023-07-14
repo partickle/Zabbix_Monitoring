@@ -29,7 +29,7 @@ class Terminal:
         for log in logs:  # Не reversed, потому что они уже в обратном порядке
             # Заводим переменную полученной строки сразу с парсингом
             new_str = log['eventid'] + "."\
-                      + get_norm_data(int(log['clock'])) + " " + log['name']
+                      + Terminal.get_norm_data(int(log['clock'])) + " " + log['name']
             # Если это последняя строка в терминале, то...
             if self.last_checked_str == new_str:
                 break  # Прерываем цикл
@@ -62,14 +62,14 @@ class Terminal:
         # Логи обычно записываются в обратном порядке, поэтому reversed
         for log in reversed(logs):
             new_str = log['eventid'] + "."\
-                      + get_norm_data(int(log['clock'])) + " " + log['name']
+                      + Terminal.get_norm_data(int(log['clock'])) + " " + log['name']
             # Добавляем в лейбл лог
             label.setText(label.text() + new_str + "\n")
             # И обновляем последнюю добавленную строку
             self.last_checked_str = new_str
 
-
-# Функция для преобразования даты из UNIX timestamp в привычную
-def get_norm_data(unix_timestamp):
-    datetime_obj = datetime.datetime.utcfromtimestamp(unix_timestamp)
-    return datetime_obj.strftime('%Y-%m-%d.%H:%M:%S')
+    # Функция для преобразования даты из UNIX timestamp в привычную
+    @staticmethod
+    def get_norm_data(unix_timestamp):
+        datetime_obj = datetime.datetime.utcfromtimestamp(unix_timestamp)
+        return datetime_obj.strftime('%Y-%m-%d.%H:%M:%S')

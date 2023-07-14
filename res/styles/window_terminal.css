@@ -4,6 +4,7 @@ QDialog {
 
 QLabel {
     background-color: #00000000;
+    color: #d2000000;
     font-weight: bold;
     font-size: 15px;
     padding: 20px;
