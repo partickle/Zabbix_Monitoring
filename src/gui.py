@@ -1695,19 +1695,24 @@ class WindowAddUser(QDialog):
         return selected_group_ids
 
 
+# Класс окна проблем
 class WindowProblems(QDialog):
     def __init__(self, zabbix, action_layout):
         super().__init__()
 
+        # Инициализируем активный лайаут и сессию для обновления окна
         self.action_layout = action_layout
         self.zabbix = zabbix
 
+        # Создаем экземпляры логики триггеров и проблем
         self.problems_logic = Problems(zabbix)
         self.triggers_logic = Triggers(zabbix)
 
+        # Задаем размер и стиль
         self.setFixedSize(600, 700)
         self.setStyleSheet(open('res/styles/window_problems.css').read())
 
+        # Создаем скролл и настраиваем его
         scroll_pane = QScrollArea(self)
         scroll_pane.setContentsMargins(0, 0, 0, 0)
         scroll_pane.setFixedSize(600, 700)
@@ -1715,31 +1720,38 @@ class WindowProblems(QDialog):
         scroll_pane.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         scroll_pane.setWidgetResizable(True)
 
+        # В него будем помещать виджет для корректного отображения
         scroll_widget = QWidget()
         scroll_widget.setContentsMargins(0, 0, 0, 0)
 
+        # А в виджет лайаут
         self.scroll_layout = QVBoxLayout()
         self.scroll_layout.setContentsMargins(0, 0, 0, 0)
         self.scroll_layout.setSpacing(0)
         self.scroll_layout.setAlignment(Qt.AlignTop)
 
+        # Создаем строку с объяснением столбцов
         self.add_explain_layout()
 
+        # А потом и все проблемы
         for index, problem in enumerate(self.problems_logic.get_data()):
             self.add_problem_layout(index, problem)
 
+        # Далее просто все устанавливаем
         scroll_pane.setWidget(scroll_widget)
         scroll_widget.setLayout(self.scroll_layout)
 
+    # Метод добавления строки с названиями столбцов на скролл
     def add_explain_layout(self):
         explain_layout = QHBoxLayout()
         explain_layout.setSpacing(0)
         explain_layout.setContentsMargins(0, 0, 0, 0)
 
+        # У каждого элемента настраивается положение и его размеры
         time_label = QLabel("Время")
         time_label.setFixedSize(80, 60)
         time_label.setAlignment(Qt.AlignCenter)
-        time_label.setObjectName("explain")
+        time_label.setObjectName("explain")  # А так же задается имя для css
 
         severity_label = QLabel("Важность")
         severity_label.setFixedSize(95, 60)
@@ -1761,32 +1773,47 @@ class WindowProblems(QDialog):
         tags_label.setAlignment(Qt.AlignCenter)
         tags_label.setObjectName("explain")
 
+        # Потом все просто добавляется на лайаут
         explain_layout.addWidget(time_label)
         explain_layout.addWidget(severity_label)
         explain_layout.addWidget(host_name_label)
         explain_layout.addWidget(name_label)
         explain_layout.addWidget(tags_label)
 
+        # А этот лайаут отправляется на скролл
         self.scroll_layout.addLayout(explain_layout)
 
+    # Метод добавления проблем на скролл
     def add_problem_layout(self, index, problem):
+        # Создаем виджет для задания фона строки
         cur_problem_widget = QWidget()
         cur_problem_widget.setContentsMargins(0, 0, 0, 0)
+
+        # Проверка на четность для задания цвета для разделения
         if index != 0 and index % 2 != 0:
             cur_problem_widget.setObjectName("background")
 
+        # Создаем лайаут, на котором будут располагаться все элементы
         cur_problem_layout = QHBoxLayout()
         cur_problem_layout.setSpacing(0)
         cur_problem_layout.setContentsMargins(0, 0, 0, 0)
 
-        time_label = QLabel(Problems.get_norm_data(int(problem.get('clock'))))
+        # Создаем лейблы, беря данные из словаря проблемы
+
+        # Для времени используем метод перевода в стандартный формат из
+        # класса логики терминала
+        time_label = QLabel(Terminal.get_norm_data(int(problem.get('clock'))))
         time_label.setFixedWidth(75)
 
+        # Для создания лейбла серьезности проблемы используем отдельный метод
         severity_label = WindowProblems.create_severity_label(
             problem['severity']
         )
         severity_label.setFixedWidth(100)
 
+        # Для лейбла имени узла сети используем метод из логики триггеров,
+        # для того, чтобы найти по objectid проблемы имя через триггер,
+        # который вызывает проблему, т.к. objectid и triggerid одинаковы
         host_name_label = QLabel(
             self.triggers_logic.get_host_name_by_triggerid(problem['objectid'])
         )
@@ -1794,20 +1821,25 @@ class WindowProblems(QDialog):
         host_name_label.setFixedWidth(85)
         host_name_label.setContentsMargins(0, 0, 5, 0)
 
+        # Для сообщения ошибки обязательно ставим правило на перенос слов
         name_label = QLabel(problem.get('name'))
         name_label.setWordWrap(True)
         name_label.setFixedWidth(205)
         name_label.adjustSize()
 
+        # Для тегов делаем отдельный скролл, потому что из очень много
         tags_scroll = QScrollArea()
         tags_scroll.setFixedWidth(125)
+        # Высоту определяем по длине сообщений
         tags_scroll.setFixedHeight(name_label.height() + 25)
+        # Выключаем полосы прокрутки
         tags_scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         tags_scroll.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         tags_scroll.setWidgetResizable(True)
 
         tags_widget = QWidget()
 
+        # Создаем лайаут для размещения будущих тегов
         tags_layout = QVBoxLayout()
         tags_layout.setContentsMargins(0, 0, 0, 0)
         tags_layout.setSpacing(2)
@@ -1816,29 +1848,28 @@ class WindowProblems(QDialog):
         tags_scroll.setWidget(tags_widget)
         tags_widget.setLayout(tags_layout)
 
+        # Добавляем теги на лайаут с помощью специального метода
         self.add_tags_label(problem, tags_layout)
 
+        # Позже просто все добавляем на лайаут проблемы
         cur_problem_layout.addWidget(time_label)
         cur_problem_layout.addWidget(severity_label)
         cur_problem_layout.addWidget(host_name_label)
         cur_problem_layout.addWidget(name_label)
         cur_problem_layout.addWidget(tags_scroll)
 
+        # Устанавливаем для виджета высоту (потому что размер лейбла
+        # установился уже после создания основного лайаута и виджета)
         cur_problem_widget.setFixedHeight(name_label.height() + 30)
         cur_problem_widget.setLayout(cur_problem_layout)
+        # И добавляем все на скролл
         self.scroll_layout.addWidget(cur_problem_widget)
 
-    @staticmethod
-    def add_tags_label(problem, tags_layout):
-        for tag in problem.get('tags'):
-            tag_label = QLabel(tag.get('tag') + ": " + tag.get('value'))
-            tag_label.setAlignment(Qt.AlignLeft)
-            tag_label.setObjectName("tag")
-
-            tags_layout.addWidget(tag_label)
-
+    # Метод для создания лейбла серьезности проблемы
     @staticmethod
     def create_severity_label(severity):
+        # Создаем дату в виде словаря, которая будет хранить значение
+        # серьезности (0-5) и массив с описанием и соответствующим цветом
         data = {
             '0': ["НЕ КЛАССИ-\nФИЦИРУЕТСЯ", "#dde0f2ff"],
             '1': ["ИНФОРМАЦИЯ", "#dd54b8ff"],
@@ -1847,12 +1878,31 @@ class WindowProblems(QDialog):
             '4': ["ВЫСОКИЙ", "#ddff9a52"],
             '5': ["КАТАСТРОФА", "#ddfc3f3f"],
         }
+
+        # Далее просто смотрим значение серьезности на входе и заполняем
+        # его соответствующими параметрами
         severity_label = QLabel(data.get(severity)[0])
         severity_label.setStyleSheet(
             f"background-color: {data.get(severity)[1]}"
         )
         severity_label.setAlignment(Qt.AlignCenter)
+
+        # И под конец возвращаем его
         return severity_label
+
+    # Метод добавления лейбла с тегами
+    @staticmethod
+    def add_tags_label(problem, tags_layout):
+        # Проходимся по массиву с тегами, который есть у проблемы
+        for tag in problem.get('tags'):
+            # Далее просто формируем строку
+            tag_label = QLabel(tag.get('tag') + ": " + tag.get('value'))
+            tag_label.setAlignment(Qt.AlignLeft)
+            # Задаем имя для стилизации
+            tag_label.setObjectName("tag")
+
+            # И добавляем все на лайаут
+            tags_layout.addWidget(tag_label)
 
 
 if __name__ == '__main__':
