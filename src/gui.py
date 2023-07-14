@@ -725,25 +725,30 @@ class WindowNodeWeb(QDialog):
         panel_of_buttons_layout = QHBoxLayout()
 
         # Добавление кнопок в соответствующую панель
-        add_host_button = QPushButton("Add")
+        add_host_button = QPushButton("Добавить")
         add_host_button.clicked.connect(
             lambda: self.add_host_button_clicked()
         )
-        delete_chosen_hosts_button = QPushButton("Delete")
+        delete_chosen_hosts_button = QPushButton("Удалить")
         delete_chosen_hosts_button.clicked.connect(
             lambda: self.delete_chosen_hosts_button_clicked()
         )
 
         # Основной лайаут scroll area
         self.main_window_hosts_layout = QGridLayout()
+        self.main_window_hosts_layout.setAlignment(Qt.AlignTop)
 
         hosts = self.hosts.get_hosts()
 
         # Для каждого хоста создается свой виджет и лайаут его
         # надписей и кнопок
-        for host in hosts:
+        for index, host in enumerate(hosts):
             current_host_widget = QWidget()
+            current_host_widget.setFixedHeight(60)
             current_host_layout = QHBoxLayout()
+
+            if index != 0 and index % 2 != 0:
+                current_host_widget.setObjectName("second")
 
             is_selected_checkbox = QCheckBox()
             current_host_layout.addWidget(is_selected_checkbox)
@@ -760,6 +765,7 @@ class WindowNodeWeb(QDialog):
             current_host_items_button = QPushButton(
                 'items' + ' ' + str(len(self.items.get_items(host)))
             )
+            current_host_items_button.setObjectName("mini")
             current_host_layout.addWidget(current_host_items_button)
 
             # Очень странно, что код снизу(тоже закоменченный) уже работает,
@@ -782,6 +788,7 @@ class WindowNodeWeb(QDialog):
             current_host_triggers_button = QPushButton(
                 'triggers' + ' ' + str(len(self.triggers.get_triggers(host)))
             )
+            current_host_triggers_button.setObjectName("mini")
             current_host_layout.addWidget(current_host_triggers_button)
             current_host_triggers_button.clicked.connect(
                 self.triggers_button_clicked(host)

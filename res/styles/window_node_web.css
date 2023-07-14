@@ -1,24 +1,63 @@
+QWidget {
+    background-color: #00ffffff;
+}
+
+QWidget#second {
+    background-color: #403f2652;
+}
+
 QDialog {
     background-color: #80ffffff;
 }
 
+QScrollArea {
+    background-color: #00ffffff;
+    border: 0px;
+}
+
+QLabel {
+    color: #333333;
+    font-size: 16px;
+    margin-right: 15px;
+}
+
 QPushButton {
-    background-color: #0078D7;
+    background-color: #ea3f2652;
     color: #FFFFFF;
     border: none;
-    padding: 20px 20px;
+    padding: 15px 15px;
     font-weight: bold;
-    font-size: 16px;
-    border-radius: 0px;
+    font-size: 20px;
+    border-radius: 10px;
 }
 
 QPushButton:hover {
-    background-color: #005CA9;
+    background-color: #ea211232;
 }
 
-QPushButton:disabled {
-    color: #0078D7;
-    background-color: #f0f0f0;
-    border-top-left-radius: 0px;
-    border-bottom-left-radius: 15px;
+QPushButton#mini {
+    padding: 10px 10px;
+    font-size: 16px;
+    border-radius: 5px;
+}
+
+QCheckBox::indicator {
+    width: 30px;
+    height: 30px;
+}
+
+QCheckBox::indicator:checked {
+    image: url("res/icon/check_box.svg");
+}
+
+QCheckBox::indicator:checked:hover, QCheckBox::indicator:checked:pressed {
+    image: url("res/icon/check_box_hover.svg");
+}
+
+QCheckBox::indicator:unchecked {
+    image: url("res/icon/check_box_empty.svg");
+}
+
+QCheckBox::indicator:unchecked:hover, QCheckBox::indicator:unchecked:pressed {
+    image: url("res/icon/check_box_empty_hover.svg");
 }
