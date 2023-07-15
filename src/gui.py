@@ -10,7 +10,7 @@ from PyQt5.QtWidgets import QApplication, QLabel, QVBoxLayout, QLineEdit, \
 
 from pyzabbix import ZabbixAPI, ZabbixAPIException
 from app_logic import Terminal, Hosts, Items, Triggers, Account, Settings, \
-    Interfaces, Login, Problems, Users, Hostgroups, Usrgrps, Roles
+    Interfaces, Login, Problems, Users, Hostgroups, Usrgrps, Roles, Charts
 
 
 # Класс окна с авторизацией
@@ -239,16 +239,19 @@ class WindowMenu(QDialog):
         node_web_layout = QHBoxLayout()
         users_layout = QHBoxLayout()
         problems_layout = QHBoxLayout()
+        graphs_layout = QHBoxLayout()
 
         # Добавляем их в массив
         self.buttons_layouts.append(node_web_layout)
         self.buttons_layouts.append(users_layout)
         self.buttons_layouts.append(problems_layout)
+        self.buttons_layouts.append(graphs_layout)
 
         # Добавляем их на меню
         menu_layout.addLayout(node_web_layout)
         menu_layout.addLayout(users_layout)
         menu_layout.addLayout(problems_layout)
+        main_layout.addLayout(graphs_layout)
 
         # Создаем массив с кнопками
         self.buttons_menu = []
@@ -291,7 +294,6 @@ class WindowMenu(QDialog):
 
         button_problems = QPushButton("Проблемы")
         self.buttons_menu.append(button_problems)
-        # Для каждой кнопки подключаем сигнал clicked к слоту button_clicked
         button_problems.clicked.connect(
             lambda: self.button_clicked(button_problems)
         )
@@ -302,9 +304,22 @@ class WindowMenu(QDialog):
             lambda: self.open_window_action("window_problems")
         )
 
+        button_graphs = QPushButton("Графики")
+        self.buttons_menu.append(button_graphs)
+        button_graphs.clicked.connect(
+            lambda: self.button_clicked(button_graphs)
+        )
+        button_graphs.clicked.connect(
+            lambda: self.add_update_button(graphs_layout)
+        )
+        button_graphs.clicked.connect(
+            lambda: self.open_window_action("window_graphs")
+        )
+
         node_web_layout.addWidget(button_node_web)
         users_layout.addWidget(button_users)
         problems_layout.addWidget(button_problems)
+        graphs_layout.addWidget(button_graphs)
 
         # Создаем лайаут с быстрым меню
         quick_layout = QHBoxLayout()
@@ -379,9 +394,7 @@ class WindowMenu(QDialog):
             self.cur_action_window = window_node_web
         elif name_window == "window_users":
             self.close_window_action()
-            window_users = WindowUsers(
-                self.zabbix, self.action_layout, self
-            )
+            window_users = WindowUsers(self.zabbix, self.action_layout, self)
             self.action_layout.addWidget(window_users)
             self.cur_action_window = window_users
         elif name_window == "window_problems":
@@ -389,6 +402,11 @@ class WindowMenu(QDialog):
             window_problems = WindowProblems(self.zabbix, self.action_layout)
             self.action_layout.addWidget(window_problems)
             self.cur_action_window = window_problems
+        elif name_window == "window_graphs":
+            self.close_window_action()
+            window_graphs = WindowCharts(self.zabbix, self.action_layout)
+            self.action_layout.addWidget(window_graphs)
+            self.cur_action_window = window_graphs
         elif name_window == "window_account":
             self.close_window_action()
             window_account = WindowAccount(self.zabbix)
@@ -1718,8 +1736,8 @@ class WindowProblems(QDialog):
         super().__init__()
 
         # Инициализируем активный лайаут и сессию для обновления окна
-        self.action_layout = action_layout
         self.zabbix = zabbix
+        self.action_layout = action_layout
 
         # Создаем экземпляры логики триггеров и проблем
         self.problems_logic = Problems(zabbix)
@@ -1920,6 +1938,27 @@ class WindowProblems(QDialog):
 
             # И добавляем все на лайаут
             tags_layout.addWidget(tag_label)
+
+
+class WindowCharts(QDialog):
+    def __init__(self, zabbix, action_layout):
+        super().__init__()
+
+        self.zabbix = zabbix
+        self.action_layout = action_layout
+
+        self.graphs_logic = Charts(zabbix)
+
+        self.setFixedSize(600, 700)
+        self.setStyleSheet(open('res/styles/window_charts.css').read())
+
+        main_layout = QVBoxLayout(self)
+
+        params_layout = QHBoxLayout()
+        scroll_area = QScrollArea()
+
+        main_layout.addLayout(params_layout)
+        main_layout.addWidget(scroll_area)
 
 
 if __name__ == '__main__':
