@@ -239,19 +239,19 @@ class WindowMenu(QDialog):
         node_web_layout = QHBoxLayout()
         users_layout = QHBoxLayout()
         problems_layout = QHBoxLayout()
-        graphs_layout = QHBoxLayout()
+        charts_layout = QHBoxLayout()
 
         # Добавляем их в массив
         self.buttons_layouts.append(node_web_layout)
         self.buttons_layouts.append(users_layout)
         self.buttons_layouts.append(problems_layout)
-        self.buttons_layouts.append(graphs_layout)
+        self.buttons_layouts.append(charts_layout)
 
         # Добавляем их на меню
         menu_layout.addLayout(node_web_layout)
         menu_layout.addLayout(users_layout)
         menu_layout.addLayout(problems_layout)
-        main_layout.addLayout(graphs_layout)
+        main_layout.addLayout(charts_layout)
 
         # Создаем массив с кнопками
         self.buttons_menu = []
@@ -304,22 +304,22 @@ class WindowMenu(QDialog):
             lambda: self.open_window_action("window_problems")
         )
 
-        button_graphs = QPushButton("Графики")
-        self.buttons_menu.append(button_graphs)
-        button_graphs.clicked.connect(
-            lambda: self.button_clicked(button_graphs)
+        button_charts = QPushButton("Графики")
+        self.buttons_menu.append(button_charts)
+        button_charts.clicked.connect(
+            lambda: self.button_clicked(button_charts)
         )
-        button_graphs.clicked.connect(
-            lambda: self.add_update_button(graphs_layout)
+        button_charts.clicked.connect(
+            lambda: self.add_update_button(charts_layout)
         )
-        button_graphs.clicked.connect(
-            lambda: self.open_window_action("window_graphs")
+        button_charts.clicked.connect(
+            lambda: self.open_window_action("window_charts")
         )
 
         node_web_layout.addWidget(button_node_web)
         users_layout.addWidget(button_users)
         problems_layout.addWidget(button_problems)
-        graphs_layout.addWidget(button_graphs)
+        charts_layout.addWidget(button_charts)
 
         # Создаем лайаут с быстрым меню
         quick_layout = QHBoxLayout()
@@ -402,11 +402,11 @@ class WindowMenu(QDialog):
             window_problems = WindowProblems(self.zabbix, self.action_layout)
             self.action_layout.addWidget(window_problems)
             self.cur_action_window = window_problems
-        elif name_window == "window_graphs":
+        elif name_window == "window_charts":
             self.close_window_action()
-            window_graphs = WindowCharts(self.zabbix, self.action_layout)
-            self.action_layout.addWidget(window_graphs)
-            self.cur_action_window = window_graphs
+            window_charts = WindowCharts(self.zabbix, self.action_layout)
+            self.action_layout.addWidget(window_charts)
+            self.cur_action_window = window_charts
         elif name_window == "window_account":
             self.close_window_action()
             window_account = WindowAccount(self.zabbix)
@@ -1947,7 +1947,8 @@ class WindowCharts(QDialog):
         self.zabbix = zabbix
         self.action_layout = action_layout
 
-        self.graphs_logic = Charts(zabbix)
+        self.charts_logic = Charts(zabbix)
+        self.hosts_logic = Hosts(zabbix)
 
         self.setFixedSize(600, 700)
         self.setStyleSheet(open('res/styles/window_charts.css').read())
@@ -1957,8 +1958,39 @@ class WindowCharts(QDialog):
         params_layout = QHBoxLayout()
         scroll_area = QScrollArea()
 
+        self.host_combo = QComboBox()
+        self.host_combo.addItems(
+            [hostname['name'] for hostname in self.hosts_logic.hosts_info]
+        )
+        self.host_combo.currentIndexChanged.connect(self.update_chart_combo)
+
+        self.chart_combo = QComboBox()
+        self.update_chart_combo()
+        self.chart_combo.currentIndexChanged.connect(self.paint_chart)
+
+        #
+        #
+        #
+
         main_layout.addLayout(params_layout)
         main_layout.addWidget(scroll_area)
+
+        params_layout.addWidget(self.host_combo)
+        params_layout.addWidget(self.chart_combo)
+
+    def update_chart_combo(self):
+        self.chart_combo.clear()
+
+        self.chart_combo.addItems(
+            self.charts_logic.get_chart_names(
+                self.hosts_logic.get_hostid_by_name(
+                    self.host_combo.currentText()
+                )
+            )
+        )
+
+    def paint_chart(self):
+        pass
 
 
 if __name__ == '__main__':
