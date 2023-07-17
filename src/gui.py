@@ -1,6 +1,7 @@
 import sys
 import inspect
 import threading
+import requests
 
 from PyQt5.QtCore import Qt, QSize
 from PyQt5.QtGui import QIcon, QPixmap
@@ -19,7 +20,7 @@ class WindowLogin(QDialog):
         super().__init__()
         # Создаем пустой экземпляр класса окна главного меню, который будет
         # использоваться позже
-        self.window_menu = None
+        self.window_app = None
 
         # Создаем экземпляр класса логики
         self.login_logic = Login()
@@ -92,6 +93,16 @@ class WindowLogin(QDialog):
         user = self.input_user.text()
         password = self.input_password.text()
 
+        # Для авторизации сессии requests.Session() zabbix-а. ZabbixAPI
+        # работает через библиотеку requests. Авторизация сессии нужна для
+        # получения доступа к ссылкам через эту библиотеку
+        auth_data = {
+            'name': user,
+            'password': password,
+            'autologin': 1,
+            'enter': 'Sign in',
+        }
+
         # Обработка ошибок
         if url == "" or user == "" or password == "":
             QMessageBox.information(self, "Мда", "Введите что-нибудь...")
@@ -101,6 +112,12 @@ class WindowLogin(QDialog):
             # Подключение
             zabbix = ZabbixAPI(url)
             zabbix.login(user, password)
+            # Отправляем данные авторизации сессии
+            zabbix.req_session = requests.Session()
+            zabbix.req_session.post(
+                f'{zabbix.url.replace("api_jsonrpc.php", "")}/index.php',
+                data=auth_data
+            )
             self.close()
 
             # Сохранение пароля
@@ -112,9 +129,9 @@ class WindowLogin(QDialog):
                 Login.set_empty_autologin()
 
             # Создание окна меню
-            self.window_menu = WindowApp(zabbix)
-            self.window_menu.show()
-            self.window_menu.exec_()
+            self.window_app = WindowApp(zabbix)
+            self.window_app.show()
+            self.window_app.exec_()
 
         except ZabbixAPIException as e:
             QMessageBox.information(self, "Ошибка Zabbix API", f'{e}')
@@ -774,7 +791,7 @@ class WindowNodeWeb(QDialog):
             current_host_layout.addWidget(is_selected_checkbox)
 
             current_host_name_label = QLabel()
-            current_host_name_label.setFixedWidth(190)
+            current_host_name_label.setFixedWidth(170)
             current_host_name_label.setText(host['host'])
             current_host_layout.addWidget(current_host_name_label)
 
@@ -1956,7 +1973,10 @@ class WindowCharts(QDialog):
         main_layout = QVBoxLayout(self)
 
         params_layout = QHBoxLayout()
-        scroll_area = QScrollArea()
+        self.chart_layout = QVBoxLayout()
+        self.chart_layout.setAlignment(Qt.AlignCenter)
+
+        self.is_diagram = QCheckBox()
 
         self.host_combo = QComboBox()
         self.host_combo.addItems(
@@ -1967,16 +1987,18 @@ class WindowCharts(QDialog):
         self.chart_combo = QComboBox()
         self.update_chart_combo()
         self.chart_combo.currentIndexChanged.connect(self.paint_chart)
+        self.paint_chart()
 
         #
         #
         #
 
         main_layout.addLayout(params_layout)
-        main_layout.addWidget(scroll_area)
+        main_layout.addLayout(self.chart_layout)
 
         params_layout.addWidget(self.host_combo)
         params_layout.addWidget(self.chart_combo)
+        params_layout.addWidget(self.is_diagram)
 
     def update_chart_combo(self):
         self.chart_combo.clear()
@@ -1989,8 +2011,30 @@ class WindowCharts(QDialog):
             )
         )
 
+    def get_is_diagram(self):
+        if self.is_diagram.isChecked():
+            return '6'
+        return '2'
+
     def paint_chart(self):
-        pass
+        for i in reversed(range(self.chart_layout.count())):
+            self.chart_layout.itemAt(i).widget().deleteLater()
+
+        label = QLabel()
+        pixmap = QPixmap()
+
+        pixmap.loadFromData(
+            self.charts_logic.get_chart_img_data(
+                self.charts_logic.get_graphid_by_name(
+                    self.chart_combo.currentText()
+                ),
+                self.get_is_diagram()
+            )
+        )
+
+        label.setPixmap(pixmap)
+
+        self.chart_layout.addWidget(label)
 
 
 if __name__ == '__main__':
