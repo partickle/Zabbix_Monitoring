@@ -1976,7 +1976,8 @@ class WindowCharts(QDialog):
         self.chart_layout = QVBoxLayout()
         self.chart_layout.setAlignment(Qt.AlignCenter)
 
-        self.is_diagram = QCheckBox()
+        self.is_diagram = QCheckBox("Диаграмма")
+        self.is_diagram.clicked.connect(self.paint_chart)
 
         self.host_combo = QComboBox()
         self.host_combo.addItems(
@@ -1986,7 +1987,7 @@ class WindowCharts(QDialog):
 
         self.chart_combo = QComboBox()
         self.update_chart_combo()
-        self.chart_combo.currentIndexChanged.connect(self.paint_chart)
+        self.chart_combo.currentTextChanged.connect(self.paint_chart)
         self.paint_chart()
 
         #
