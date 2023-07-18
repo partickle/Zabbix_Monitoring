@@ -1808,22 +1808,22 @@ class WindowProblems(QDialog):
 
         # У каждого элемента настраивается положение и его размеры
         time_label = QLabel("Время")
-        time_label.setFixedSize(80, 60)
+        time_label.setFixedSize(90, 60)
         time_label.setAlignment(Qt.AlignCenter)
         time_label.setObjectName("explain")  # А так же задается имя для css
 
         severity_label = QLabel("Важность")
-        severity_label.setFixedSize(95, 60)
+        severity_label.setFixedSize(90, 60)
         severity_label.setAlignment(Qt.AlignCenter)
         severity_label.setObjectName("explain")
 
         host_name_label = QLabel("Узел сети")
-        host_name_label.setFixedSize(95, 60)
+        host_name_label.setFixedSize(100, 60)
         host_name_label.setAlignment(Qt.AlignCenter)
         host_name_label.setObjectName("explain")
 
         name_label = QLabel("Проблема")
-        name_label.setFixedSize(200, 60)
+        name_label.setFixedSize(190, 60)
         name_label.setAlignment(Qt.AlignCenter)
         name_label.setObjectName("explain")
 
