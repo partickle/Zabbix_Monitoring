@@ -7,7 +7,7 @@ from PyQt5.QtCore import Qt, QSize
 from PyQt5.QtGui import QIcon, QPixmap
 from PyQt5.QtWidgets import QApplication, QLabel, QVBoxLayout, QLineEdit, \
     QPushButton, QDialog, QMessageBox, QHBoxLayout, QScrollArea, QCheckBox, \
-    QWidget, QGridLayout, QComboBox
+    QWidget, QGridLayout, QComboBox, QStyleFactory
 
 from pyzabbix import ZabbixAPI, ZabbixAPIException
 from app_logic import Terminal, Hosts, Items, Triggers, Account, Settings, \
@@ -1973,6 +1973,7 @@ class WindowCharts(QDialog):
         main_layout = QVBoxLayout(self)
 
         params_layout = QHBoxLayout()
+        params_layout.setContentsMargins(5, 20, 5, 0)
         self.chart_layout = QVBoxLayout()
         self.chart_layout.setAlignment(Qt.AlignCenter)
 
@@ -1980,19 +1981,17 @@ class WindowCharts(QDialog):
         self.is_diagram.clicked.connect(self.paint_chart)
 
         self.host_combo = QComboBox()
+        self.host_combo.setStyle(QStyleFactory.create("Fusion"))
         self.host_combo.addItems(
             [hostname['name'] for hostname in self.hosts_logic.hosts_info]
         )
         self.host_combo.currentIndexChanged.connect(self.update_chart_combo)
 
         self.chart_combo = QComboBox()
+        self.chart_combo.setStyle(QStyleFactory.create("Fusion"))
         self.update_chart_combo()
         self.chart_combo.currentTextChanged.connect(self.paint_chart)
         self.paint_chart()
-
-        #
-        #
-        #
 
         main_layout.addLayout(params_layout)
         main_layout.addLayout(self.chart_layout)
