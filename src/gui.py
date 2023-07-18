@@ -1,16 +1,17 @@
 import sys
 import inspect
 import threading
+import requests
 
 from PyQt5.QtCore import Qt, QSize
 from PyQt5.QtGui import QIcon, QPixmap
 from PyQt5.QtWidgets import QApplication, QLabel, QVBoxLayout, QLineEdit, \
     QPushButton, QDialog, QMessageBox, QHBoxLayout, QScrollArea, QCheckBox, \
-    QWidget, QGridLayout, QComboBox
+    QWidget, QGridLayout, QComboBox, QStyleFactory
 
 from pyzabbix import ZabbixAPI, ZabbixAPIException
 from app_logic import Terminal, Hosts, Items, Triggers, Account, Settings, \
-    Interfaces, Login, Problems, Users, Hostgroups, Usrgrps, Roles
+    Interfaces, Login, Problems, Users, Hostgroups, Usrgrps, Roles, Charts
 
 
 # Класс окна с авторизацией
@@ -19,7 +20,7 @@ class WindowLogin(QDialog):
         super().__init__()
         # Создаем пустой экземпляр класса окна главного меню, который будет
         # использоваться позже
-        self.window_menu = None
+        self.window_app = None
 
         # Создаем экземпляр класса логики
         self.login_logic = Login()
@@ -92,6 +93,16 @@ class WindowLogin(QDialog):
         user = self.input_user.text()
         password = self.input_password.text()
 
+        # Для авторизации сессии requests.Session(). Авторизация сессии
+        # нужна для отправки запросов на хосты, требующие авторизации,
+        # в нашем случае это хост, на котором находится zabbix
+        auth_data = {
+            'name': user,
+            'password': password,
+            'autologin': 1,
+            'enter': 'Sign in',
+        }
+
         # Обработка ошибок
         if url == "" or user == "" or password == "":
             QMessageBox.information(self, "Мда", "Введите что-нибудь...")
@@ -101,6 +112,15 @@ class WindowLogin(QDialog):
             # Подключение
             zabbix = ZabbixAPI(url)
             zabbix.login(user, password)
+
+            # Создаем новое поле в экземпляре pyzabbix класса Session
+            zabbix.req_session = requests.Session()
+            # Отправляем данные авторизации сессии
+            zabbix.req_session.post(
+                f'{zabbix.url.replace("api_jsonrpc.php", "")}/index.php',
+                data=auth_data
+            )
+
             self.close()
 
             # Сохранение пароля
@@ -112,9 +132,9 @@ class WindowLogin(QDialog):
                 Login.set_empty_autologin()
 
             # Создание окна меню
-            self.window_menu = WindowApp(zabbix)
-            self.window_menu.show()
-            self.window_menu.exec_()
+            self.window_app = WindowApp(zabbix)
+            self.window_app.show()
+            self.window_app.exec_()
 
         except ZabbixAPIException as e:
             QMessageBox.information(self, "Ошибка Zabbix API", f'{e}')
@@ -239,16 +259,19 @@ class WindowMenu(QDialog):
         node_web_layout = QHBoxLayout()
         users_layout = QHBoxLayout()
         problems_layout = QHBoxLayout()
+        charts_layout = QHBoxLayout()
 
         # Добавляем их в массив
         self.buttons_layouts.append(node_web_layout)
         self.buttons_layouts.append(users_layout)
         self.buttons_layouts.append(problems_layout)
+        self.buttons_layouts.append(charts_layout)
 
         # Добавляем их на меню
         menu_layout.addLayout(node_web_layout)
         menu_layout.addLayout(users_layout)
         menu_layout.addLayout(problems_layout)
+        main_layout.addLayout(charts_layout)
 
         # Создаем массив с кнопками
         self.buttons_menu = []
@@ -291,7 +314,6 @@ class WindowMenu(QDialog):
 
         button_problems = QPushButton("Проблемы")
         self.buttons_menu.append(button_problems)
-        # Для каждой кнопки подключаем сигнал clicked к слоту button_clicked
         button_problems.clicked.connect(
             lambda: self.button_clicked(button_problems)
         )
@@ -302,9 +324,22 @@ class WindowMenu(QDialog):
             lambda: self.open_window_action("window_problems")
         )
 
+        button_charts = QPushButton("Графики")
+        self.buttons_menu.append(button_charts)
+        button_charts.clicked.connect(
+            lambda: self.button_clicked(button_charts)
+        )
+        button_charts.clicked.connect(
+            lambda: self.add_update_button(charts_layout)
+        )
+        button_charts.clicked.connect(
+            lambda: self.open_window_action("window_charts")
+        )
+
         node_web_layout.addWidget(button_node_web)
         users_layout.addWidget(button_users)
         problems_layout.addWidget(button_problems)
+        charts_layout.addWidget(button_charts)
 
         # Создаем лайаут с быстрым меню
         quick_layout = QHBoxLayout()
@@ -379,9 +414,7 @@ class WindowMenu(QDialog):
             self.cur_action_window = window_node_web
         elif name_window == "window_users":
             self.close_window_action()
-            window_users = WindowUsers(
-                self.zabbix, self.action_layout, self
-            )
+            window_users = WindowUsers(self.zabbix, self.action_layout, self)
             self.action_layout.addWidget(window_users)
             self.cur_action_window = window_users
         elif name_window == "window_problems":
@@ -389,6 +422,11 @@ class WindowMenu(QDialog):
             window_problems = WindowProblems(self.zabbix, self.action_layout)
             self.action_layout.addWidget(window_problems)
             self.cur_action_window = window_problems
+        elif name_window == "window_charts":
+            self.close_window_action()
+            window_charts = WindowCharts(self.zabbix, self.action_layout)
+            self.action_layout.addWidget(window_charts)
+            self.cur_action_window = window_charts
         elif name_window == "window_account":
             self.close_window_action()
             window_account = WindowAccount(self.zabbix)
@@ -756,7 +794,7 @@ class WindowNodeWeb(QDialog):
             current_host_layout.addWidget(is_selected_checkbox)
 
             current_host_name_label = QLabel()
-            current_host_name_label.setFixedWidth(190)
+            current_host_name_label.setFixedWidth(170)
             current_host_name_label.setText(host['host'])
             current_host_layout.addWidget(current_host_name_label)
 
@@ -1718,8 +1756,8 @@ class WindowProblems(QDialog):
         super().__init__()
 
         # Инициализируем активный лайаут и сессию для обновления окна
-        self.action_layout = action_layout
         self.zabbix = zabbix
+        self.action_layout = action_layout
 
         # Создаем экземпляры логики триггеров и проблем
         self.problems_logic = Problems(zabbix)
@@ -1729,8 +1767,13 @@ class WindowProblems(QDialog):
         self.setFixedSize(600, 700)
         self.setStyleSheet(open('res/styles/window_problems.css').read())
 
+        # Создаем главный лайаут
+        self.main_layout = QVBoxLayout(self)
+        self.main_layout.setContentsMargins(0, 0, 0, 0)
+        self.main_layout.setSpacing(0)
+
         # Создаем скролл и настраиваем его
-        scroll_pane = QScrollArea(self)
+        scroll_pane = QScrollArea()
         scroll_pane.setContentsMargins(0, 0, 0, 0)
         scroll_pane.setFixedSize(600, 700)
         scroll_pane.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
@@ -1743,7 +1786,7 @@ class WindowProblems(QDialog):
 
         # А в виджет лайаут
         self.scroll_layout = QVBoxLayout()
-        self.scroll_layout.setContentsMargins(0, 0, 0, 0)
+        self.scroll_layout.setContentsMargins(10, 0, 10, 10)
         self.scroll_layout.setSpacing(0)
         self.scroll_layout.setAlignment(Qt.AlignTop)
 
@@ -1755,6 +1798,8 @@ class WindowProblems(QDialog):
             self.add_problem_layout(index, problem)
 
         # Далее просто все устанавливаем
+        self.main_layout.addWidget(scroll_pane)
+
         scroll_pane.setWidget(scroll_widget)
         scroll_widget.setLayout(self.scroll_layout)
 
@@ -1766,22 +1811,22 @@ class WindowProblems(QDialog):
 
         # У каждого элемента настраивается положение и его размеры
         time_label = QLabel("Время")
-        time_label.setFixedSize(80, 60)
+        time_label.setFixedSize(90, 60)
         time_label.setAlignment(Qt.AlignCenter)
         time_label.setObjectName("explain")  # А так же задается имя для css
 
         severity_label = QLabel("Важность")
-        severity_label.setFixedSize(95, 60)
+        severity_label.setFixedSize(90, 60)
         severity_label.setAlignment(Qt.AlignCenter)
         severity_label.setObjectName("explain")
 
         host_name_label = QLabel("Узел сети")
-        host_name_label.setFixedSize(95, 60)
+        host_name_label.setFixedSize(100, 60)
         host_name_label.setAlignment(Qt.AlignCenter)
         host_name_label.setObjectName("explain")
 
         name_label = QLabel("Проблема")
-        name_label.setFixedSize(200, 60)
+        name_label.setFixedSize(190, 60)
         name_label.setAlignment(Qt.AlignCenter)
         name_label.setObjectName("explain")
 
@@ -1798,7 +1843,7 @@ class WindowProblems(QDialog):
         explain_layout.addWidget(tags_label)
 
         # А этот лайаут отправляется на скролл
-        self.scroll_layout.addLayout(explain_layout)
+        self.main_layout.addLayout(explain_layout)
 
     # Метод добавления проблем на скролл
     def add_problem_layout(self, index, problem):
@@ -1846,7 +1891,7 @@ class WindowProblems(QDialog):
 
         # Для тегов делаем отдельный скролл, потому что из очень много
         tags_scroll = QScrollArea()
-        tags_scroll.setFixedWidth(125)
+        tags_scroll.setFixedWidth(115)
         # Высоту определяем по длине сообщений
         tags_scroll.setFixedHeight(name_label.height() + 25)
         # Выключаем полосы прокрутки
@@ -1900,7 +1945,8 @@ class WindowProblems(QDialog):
         # его соответствующими параметрами
         severity_label = QLabel(data.get(severity)[0])
         severity_label.setStyleSheet(
-            f"background-color: {data.get(severity)[1]}"
+            f"background-color: {data.get(severity)[1]}; "
+            f"border-bottom: 2px solid #20000000"
         )
         severity_label.setAlignment(Qt.AlignCenter)
 
@@ -1920,6 +1966,127 @@ class WindowProblems(QDialog):
 
             # И добавляем все на лайаут
             tags_layout.addWidget(tag_label)
+
+
+class WindowCharts(QDialog):
+    def __init__(self, zabbix, action_layout):
+        super().__init__()
+
+        # Инициализируем поля, необходимые для обновления окна
+        self.zabbix = zabbix
+        self.action_layout = action_layout
+
+        # Создаем экземпляры логики
+        self.charts_logic = Charts(zabbix)
+        self.hosts_logic = Hosts(zabbix)
+
+        self.setFixedSize(600, 700)
+        self.setStyleSheet(open('res/styles/window_charts.css').read())
+
+        # Создаем главный лайаут
+        main_layout = QVBoxLayout(self)
+
+        # Создаем лайауты с параметрами и графиком
+        params_layout = QHBoxLayout()
+        params_layout.setContentsMargins(5, 20, 5, 20)
+
+        self.chart_layout = QVBoxLayout()
+        self.chart_layout.setAlignment(Qt.AlignCenter)
+
+        # Создаем чекбокс для переключения с графика на диаграмму
+        self.is_diagram = QCheckBox("Диаграмма")
+        self.is_diagram.clicked.connect(self.paint_chart)
+
+        # Создаем комбо-бокс с выбором узла сети,
+        # для которого будут отображаться графики
+        self.host_combo = QComboBox()
+        # Ставим для него стилизацию Fusion (Windows для меня старовата)
+        self.host_combo.setStyle(QStyleFactory.create("Fusion"))
+        # Добавляем в него элементы (имена узлов сети)
+        self.host_combo.addItems(
+            [hostname['name'] for hostname in self.hosts_logic.hosts_info]
+        )
+        # Если индекс элемента бокса изменился,
+        # то вызываем метод обновления графиков для узла сети
+        self.host_combo.currentIndexChanged.connect(self.update_chart_combo)
+
+        # Создаем комбо-бокс с названиями графиков
+        self.chart_combo = QComboBox()
+        # Аналогично ставим у него стиль
+        self.chart_combo.setStyle(QStyleFactory.create("Fusion"))
+        # Вызываем метод для обновления элементов бокса для того,
+        # чтобы он не был пустой при первом открытии окна
+        self.update_chart_combo()
+        # Если изменился текст, то вызываем метод для отрисовки графика
+        self.chart_combo.currentTextChanged.connect(self.paint_chart)
+        # Отрисовываем график при первом открывании окна
+        self.paint_chart()
+
+        # Добавляем все на лайауты
+        main_layout.addLayout(params_layout)
+        main_layout.addLayout(self.chart_layout)
+
+        params_layout.addWidget(self.host_combo)
+        params_layout.addWidget(self.chart_combo)
+        params_layout.addWidget(self.is_diagram)
+
+    # Метод для обновления комбо-бокса с названиями графиков
+    def update_chart_combo(self):
+        # Очищаем все элементы, которые были до этого
+        self.chart_combo.clear()
+
+        # Добавляем новые из метода логики в зависимости от узла сети
+        self.chart_combo.addItems(
+            self.charts_logic.get_chart_names(
+                self.hosts_logic.get_hostid_by_name(
+                    self.host_combo.currentText()
+                )
+            )
+        )
+
+    # Метод для определения графика/диаграммы из чекбокса
+    def get_is_diagram(self):
+        # Проверяем стоит галочка или нет и возвращаем соот. значение
+        if self.is_diagram.isChecked():
+            return '6'
+        return '2'
+
+    # Метод для отрисовки графика
+    def paint_chart(self):
+        # Удаляем все элементы с лайаута, проходясь циклом элементам,
+        # находящихся в лайауте
+        for i in reversed(range(self.chart_layout.count())):
+            self.chart_layout.itemAt(i).widget().deleteLater()
+
+        # Создаем лейбл и pixmap для отрисовки
+        label = QLabel()
+        pixmap = QPixmap()
+
+        # Загружаем данные изображения через метод логики по graphid
+        img_data = self.charts_logic.get_chart_img_data(
+                self.charts_logic.get_graphid_by_name(
+                    self.chart_combo.currentText()
+                ),
+                self.get_is_diagram()
+            )
+
+        # Делаем провеку на длинну строки:
+        # если она больше 40, то это данные изображения
+        if len(img_data) > 40:
+            # Формируем изображение по image data
+            pixmap.loadFromData(img_data)
+
+            # Устанавливаем изображение на лейбл
+            label.setPixmap(pixmap)
+
+            # И потом уже сам лейбл на лайаут
+            self.chart_layout.addWidget(label)
+
+        # Если нет, то выводим сообщение об ошибке
+        else:
+            QMessageBox.information(
+                self, "Ошибка загрузки изображения", img_data
+            )
 
 
 if __name__ == '__main__':
