@@ -20,11 +20,11 @@ class Charts:
 
     def get_chart_img_data(self, graphid, cd):  # cd - chart/diagram
         width = 450
-        height = 400
+        height = None
 
         if cd == '6':
             width = 575
-            height = 500
+            height = 550
 
         params = {
             'graphid': graphid,

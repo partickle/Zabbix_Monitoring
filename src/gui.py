@@ -1764,8 +1764,13 @@ class WindowProblems(QDialog):
         self.setFixedSize(600, 700)
         self.setStyleSheet(open('res/styles/window_problems.css').read())
 
+        # Создаем главный лайаут
+        self.main_layout = QVBoxLayout(self)
+        self.main_layout.setContentsMargins(0, 0, 0, 0)
+        self.main_layout.setSpacing(0)
+
         # Создаем скролл и настраиваем его
-        scroll_pane = QScrollArea(self)
+        scroll_pane = QScrollArea()
         scroll_pane.setContentsMargins(0, 0, 0, 0)
         scroll_pane.setFixedSize(600, 700)
         scroll_pane.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
@@ -1778,7 +1783,7 @@ class WindowProblems(QDialog):
 
         # А в виджет лайаут
         self.scroll_layout = QVBoxLayout()
-        self.scroll_layout.setContentsMargins(0, 0, 0, 0)
+        self.scroll_layout.setContentsMargins(10, 0, 10, 10)
         self.scroll_layout.setSpacing(0)
         self.scroll_layout.setAlignment(Qt.AlignTop)
 
@@ -1790,6 +1795,8 @@ class WindowProblems(QDialog):
             self.add_problem_layout(index, problem)
 
         # Далее просто все устанавливаем
+        self.main_layout.addWidget(scroll_pane)
+
         scroll_pane.setWidget(scroll_widget)
         scroll_widget.setLayout(self.scroll_layout)
 
@@ -1833,7 +1840,7 @@ class WindowProblems(QDialog):
         explain_layout.addWidget(tags_label)
 
         # А этот лайаут отправляется на скролл
-        self.scroll_layout.addLayout(explain_layout)
+        self.main_layout.addLayout(explain_layout)
 
     # Метод добавления проблем на скролл
     def add_problem_layout(self, index, problem):
@@ -1881,7 +1888,7 @@ class WindowProblems(QDialog):
 
         # Для тегов делаем отдельный скролл, потому что из очень много
         tags_scroll = QScrollArea()
-        tags_scroll.setFixedWidth(125)
+        tags_scroll.setFixedWidth(115)
         # Высоту определяем по длине сообщений
         tags_scroll.setFixedHeight(name_label.height() + 25)
         # Выключаем полосы прокрутки
@@ -1935,7 +1942,8 @@ class WindowProblems(QDialog):
         # его соответствующими параметрами
         severity_label = QLabel(data.get(severity)[0])
         severity_label.setStyleSheet(
-            f"background-color: {data.get(severity)[1]}"
+            f"background-color: {data.get(severity)[1]}; "
+            f"border-bottom: 2px solid #20000000"
         )
         severity_label.setAlignment(Qt.AlignCenter)
 
@@ -1973,7 +1981,8 @@ class WindowCharts(QDialog):
         main_layout = QVBoxLayout(self)
 
         params_layout = QHBoxLayout()
-        params_layout.setContentsMargins(5, 20, 5, 0)
+        params_layout.setContentsMargins(5, 20, 5, 20)
+
         self.chart_layout = QVBoxLayout()
         self.chart_layout.setAlignment(Qt.AlignCenter)
 
