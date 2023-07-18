@@ -93,9 +93,9 @@ class WindowLogin(QDialog):
         user = self.input_user.text()
         password = self.input_password.text()
 
-        # Для авторизации сессии requests.Session() zabbix-а. ZabbixAPI
-        # работает через библиотеку requests. Авторизация сессии нужна для
-        # получения доступа к ссылкам через эту библиотеку
+        # Для авторизации сессии requests.Session(). Авторизация сессии
+        # нужна для отправки запросов на хосты, требующие авторизации,
+        # в нашем случае это хост, на котором находится zabbix
         auth_data = {
             'name': user,
             'password': password,
@@ -112,12 +112,15 @@ class WindowLogin(QDialog):
             # Подключение
             zabbix = ZabbixAPI(url)
             zabbix.login(user, password)
-            # Отправляем данные авторизации сессии
+
+            # Создаем новое поле в экземпляре pyzabbix класса Session
             zabbix.req_session = requests.Session()
+            # Отправляем данные авторизации сессии
             zabbix.req_session.post(
                 f'{zabbix.url.replace("api_jsonrpc.php", "")}/index.php',
                 data=auth_data
             )
+
             self.close()
 
             # Сохранение пароля
@@ -1969,39 +1972,57 @@ class WindowCharts(QDialog):
     def __init__(self, zabbix, action_layout):
         super().__init__()
 
+        # Инициализируем поля, необходимые для обновления окна
         self.zabbix = zabbix
         self.action_layout = action_layout
 
+        # Создаем экземпляры логики
         self.charts_logic = Charts(zabbix)
         self.hosts_logic = Hosts(zabbix)
 
         self.setFixedSize(600, 700)
         self.setStyleSheet(open('res/styles/window_charts.css').read())
 
+        # Создаем главный лайаут
         main_layout = QVBoxLayout(self)
 
+        # Создаем лайауты с параметрами и графиком
         params_layout = QHBoxLayout()
         params_layout.setContentsMargins(5, 20, 5, 20)
 
         self.chart_layout = QVBoxLayout()
         self.chart_layout.setAlignment(Qt.AlignCenter)
 
+        # Создаем чекбокс для переключения с графика на диаграмму
         self.is_diagram = QCheckBox("Диаграмма")
         self.is_diagram.clicked.connect(self.paint_chart)
 
+        # Создаем комбо-бокс с выбором узла сети,
+        # для которого будут отображаться графики
         self.host_combo = QComboBox()
+        # Ставим для него стилизацию Fusion (Windows для меня старовата)
         self.host_combo.setStyle(QStyleFactory.create("Fusion"))
+        # Добавляем в него элементы (имена узлов сети)
         self.host_combo.addItems(
             [hostname['name'] for hostname in self.hosts_logic.hosts_info]
         )
+        # Если индекс элемента бокса изменился,
+        # то вызываем метод обновления графиков для узла сети
         self.host_combo.currentIndexChanged.connect(self.update_chart_combo)
 
+        # Создаем комбо-бокс с названиями графиков
         self.chart_combo = QComboBox()
+        # Аналогично ставим у него стиль
         self.chart_combo.setStyle(QStyleFactory.create("Fusion"))
+        # Вызываем метод для обновления элементов бокса для того,
+        # чтобы он не был пустой при первом открытии окна
         self.update_chart_combo()
+        # Если изменился текст, то вызываем метод для отрисовки графика
         self.chart_combo.currentTextChanged.connect(self.paint_chart)
+        # Отрисовываем график при первом открывании окна
         self.paint_chart()
 
+        # Добавляем все на лайауты
         main_layout.addLayout(params_layout)
         main_layout.addLayout(self.chart_layout)
 
@@ -2009,9 +2030,12 @@ class WindowCharts(QDialog):
         params_layout.addWidget(self.chart_combo)
         params_layout.addWidget(self.is_diagram)
 
+    # Метод для обновления комбо-бокса с названиями графиков
     def update_chart_combo(self):
+        # Очищаем все элементы, которые были до этого
         self.chart_combo.clear()
 
+        # Добавляем новые из метода логики в зависимости от узла сети
         self.chart_combo.addItems(
             self.charts_logic.get_chart_names(
                 self.hosts_logic.get_hostid_by_name(
@@ -2020,30 +2044,49 @@ class WindowCharts(QDialog):
             )
         )
 
+    # Метод для определения графика/диаграммы из чекбокса
     def get_is_diagram(self):
+        # Проверяем стоит галочка или нет и возвращаем соот. значение
         if self.is_diagram.isChecked():
             return '6'
         return '2'
 
+    # Метод для отрисовки графика
     def paint_chart(self):
+        # Удаляем все элементы с лайаута, проходясь циклом элементам,
+        # находящихся в лайауте
         for i in reversed(range(self.chart_layout.count())):
             self.chart_layout.itemAt(i).widget().deleteLater()
 
+        # Создаем лейбл и pixmap для отрисовки
         label = QLabel()
         pixmap = QPixmap()
 
-        pixmap.loadFromData(
-            self.charts_logic.get_chart_img_data(
+        # Загружаем данные изображения через метод логики по graphid
+        img_data = self.charts_logic.get_chart_img_data(
                 self.charts_logic.get_graphid_by_name(
                     self.chart_combo.currentText()
                 ),
                 self.get_is_diagram()
             )
-        )
 
-        label.setPixmap(pixmap)
+        # Делаем провеку на длинну строки:
+        # если она больше 40, то это данные изображения
+        if len(img_data) > 40:
+            # Формируем изображение по image data
+            pixmap.loadFromData(img_data)
 
-        self.chart_layout.addWidget(label)
+            # Устанавливаем изображение на лейбл
+            label.setPixmap(pixmap)
+
+            # И потом уже сам лейбл на лайаут
+            self.chart_layout.addWidget(label)
+
+        # Если нет, то выводим сообщение об ошибке
+        else:
+            QMessageBox.information(
+                self, "Ошибка загрузки изображения", img_data
+            )
 
 
 if __name__ == '__main__':

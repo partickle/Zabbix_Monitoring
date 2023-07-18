@@ -56,6 +56,7 @@ class Hosts:
         # * нужно, чтобы распаковать список как множество аргументов
         self.zabbix.host.delete(*hostids_to_delete)
 
+    # Метод для нахождения id хоста по его имени
     def get_hostid_by_name(self, name):
         for host in self.hosts_info:
             if host['name'] == name:

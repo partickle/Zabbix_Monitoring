@@ -7,6 +7,33 @@ QLabel {
     border-radius: 5px;
 }
 
+QMessageBox {
+    border: 0px;
+    background-color: #ffffff;
+}
+
+QMessageBox QLabel {
+    border: 0px;
+}
+
+QMessageBox QPushButton {
+    background-color: #9010ee;
+    color: #FFFFFF;
+    border: none;
+    padding: 10px 16px;
+    border-radius: 5px;
+    font-weight: bold;
+    font-size: 17px;
+}
+
+QMessageBox QPushButton:hover {
+    background-color: #7010dd;
+}
+
+QMessageBox QPushButton:pressed {
+    background-color: #501099;
+}
+
 QComboBox {
     background-color: #403f2652;
     color: #333333;
